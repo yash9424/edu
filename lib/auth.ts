@@ -23,22 +23,7 @@ export async function decrypt(input: string | undefined): Promise<any> {
     })
     return payload
   } catch (error) {
-    return null
-  }
-}
-
-
-
-export async function getSession(): Promise<any | null> {
-  const cookieStore = await cookies()
-  const session = cookieStore.get("session")?.value
-
-  if (!session) return null
-
-  try {
-    const payload = await decrypt(session)
-    return payload.user
-  } catch (error) {
+    console.log('JWT decrypt error:', error)
     return null
   }
 }
@@ -51,10 +36,31 @@ export async function createSession(user: any) {
   cookieStore.set("session", session, {
     expires,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false, // Allow HTTP for local development
     sameSite: "lax",
     path: "/",
   })
+  
+  console.log('Session cookie set for user:', user.email)
+}
+
+export async function getSession(): Promise<any | null> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get("session")?.value
+
+  if (!session) {
+    console.log('No session cookie found')
+    return null
+  }
+
+  try {
+    const payload = await decrypt(session)
+    console.log('Session found for user:', payload?.user?.email)
+    return payload.user
+  } catch (error) {
+    console.log('Session decrypt failed:', error)
+    return null
+  }
 }
 
 export async function deleteSession() {

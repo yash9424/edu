@@ -1,31 +1,27 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { deleteSession } from "@/lib/auth"
 
-export async function GET(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Delete the session
     await deleteSession()
-    
-    const url = new URL(request.url)
-    const origin = url.origin
-    
-    return NextResponse.redirect(new URL('/login', origin))
-  } catch (error) {
-    console.error("Logout error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
 
-export async function POST(request: Request) {
-  try {
-    await deleteSession()
+    // Get the host from the request headers
+    const host = request.headers.get('host') || 'localhost:3004'
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
     
-    // Get the origin from the request to ensure we redirect to the correct port
-    const url = new URL(request.url)
-    const origin = url.origin
+    // Create redirect URL with correct host
+    const redirectUrl = `${protocol}://${host}/login`
     
-    return NextResponse.redirect(new URL('/login', origin))
-  } catch (error) {
+    console.log('Logout redirect to:', redirectUrl)
+
+    // For form submissions, use 302 redirect
+    return NextResponse.redirect(redirectUrl, 302)
+
+  } catch (error: any) {
     console.error("Logout error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const host = request.headers.get('host') || 'localhost:3004'
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    return NextResponse.redirect(`${protocol}://${host}/login`, 302)
   }
 }
