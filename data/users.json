@@ -1,0 +1,58 @@
+[
+  {
+    "id": "user_3",
+    "username": "dreamuni",
+    "email": "hello@dreamuniversity.com",
+    "name": "Dream University Consultants",
+    "role": "Agency",
+    "agencyId": "3",
+    "agencyName": "Dream University Consultants",
+    "status": "active",
+    "createdAt": "2024-01-10",
+    "lastLogin": "2024-02-09"
+  },
+  {
+    "id": "user_4",
+    "username": "eliteedu",
+    "email": "contact@eliteedu.com",
+    "name": "Elite Education Services",
+    "role": "Agency",
+    "agencyId": "4",
+    "agencyName": "Elite Education Services",
+    "status": "active",
+    "createdAt": "2024-01-25",
+    "lastLogin": "2024-02-11"
+  },
+  {
+    "id": "admin_1",
+    "username": "admin",
+    "email": "admin@education.com",
+    "name": "System Administrator",
+    "role": "Admin",
+    "status": "active",
+    "createdAt": "2024-01-01",
+    "lastLogin": "2024-02-11"
+  },
+  {
+    "id": "admin_2",
+    "username": "grindx_admin",
+    "email": "admin@grindx.io",
+    "name": "GrindX Administrator",
+    "role": "Admin",
+    "status": "active",
+    "createdAt": "2024-01-01",
+    "lastLogin": "2024-02-11"
+  },
+  {
+    "id": "agency_1",
+    "username": "agency",
+    "email": "agency@grindx.io",
+    "name": "GrindX Agency",
+    "role": "Agency",
+    "agencyId": "5",
+    "agencyName": "GrindX Edutech",
+    "status": "active",
+    "createdAt": "2024-01-01",
+    "lastLogin": "2024-02-11"
+  }
+]

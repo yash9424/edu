@@ -1,0 +1,61 @@
+[
+  {
+    "id": "1",
+    "name": "Global Edu Corp",
+    "email": "agentx@globaledu.com",
+    "phone": "+91 9007039237",
+    "address": "123 Education Street, Learning City, LC 12345",
+    "contactPerson": "Shaggy Sen",
+    "commissionRate": 17,
+    "status": "active",
+    "createdAt": "2024-01-15",
+    "userId": "user_1",
+    "username": "globaledu",
+    "totalApplications": 2,
+    "totalRevenue": 155000,
+    "hasUser": true,
+    "_previousStatus": "inactive"
+  },
+  {
+    "id": "5",
+    "name": "GrindX Edutech",
+    "email": "agency@grindx.io",
+    "phone": "+91 98765 54321",
+    "address": "GrindX Office, Tech Park, Bangalore, Karnataka 560001",
+    "contactPerson": "GrindX Agency",
+    "commissionRate": 72,
+    "status": "active",
+    "createdAt": "2024-01-15",
+    "userId": "agency_1",
+    "username": "agency",
+    "totalApplications": 2,
+    "totalRevenue": 0,
+    "hasUser": true
+  },
+  {
+    "id": "3",
+    "name": "Dream Uni Consultants",
+    "email": "up.email@dreamuniversity.com",
+    "phone": "+91 99999 88888",
+    "address": "Bandra West, Mumbai, Maharashtra 400050",
+    "contactPerson": "Sanjay Mehta",
+    "commissionRate": 18,
+    "status": "active",
+    "createdAt": "2024-01-10",
+    "userId": "user_3",
+    "username": "dreamuni"
+  },
+  {
+    "id": "4",
+    "name": "Elite Education Services",
+    "email": "contact@eliteedu.com",
+    "phone": "+91 99887 76543",
+    "address": "Koramangala, Bangalore, Karnataka 560034",
+    "contactPerson": "Sneha Reddy",
+    "commissionRate": 14,
+    "status": "active",
+    "createdAt": "2024-01-25",
+    "userId": "user_4",
+    "username": "eliteedu"
+  }
+]

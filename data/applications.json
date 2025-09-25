@@ -1,0 +1,357 @@
+[
+  {
+    "id": "1",
+    "studentName": "Amit Patel",
+    "email": "amit.patel@email.com",
+    "phone": "+91 98765 43210",
+    "agencyId": "1",
+    "agencyName": "Global Education Partners",
+    "collegeId": "1",
+    "collegeName": "Massachusetts Institute of Technology",
+    "courseId": "1",
+    "courseName": "Computer Science and Engineering",
+    "status": "approved",
+    "submittedAt": "2024-01-25",
+    "fees": 75000,
+    "applicationId": "APP-2024-001",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "recommendation_letter.pdf",
+      "sop.pdf"
+    ],
+    "pendingDocuments": [
+      "Updated Transcript",
+      "IELTS Certificate"
+    ],
+    "academicRecords": [
+      {
+        "level": "High School",
+        "board": "Maharashtra State Board",
+        "year": "2013",
+        "obtainedMarks": "485",
+        "percentage": "97.0"
+      },
+      {
+        "level": "Intermediate",
+        "board": "Maharashtra State Board",
+        "year": "2015",
+        "obtainedMarks": "590",
+        "percentage": "98.3"
+      },
+      {
+        "level": "Bachelor's",
+        "board": "IIT Bombay",
+        "year": "2019",
+        "obtainedMarks": "8.5",
+        "percentage": "85.0"
+      }
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1995-03-15",
+      "nationality": "Indian",
+      "address": "123 Tech Street, Mumbai, Maharashtra, India",
+      "previousEducation": "Bachelor of Technology in Computer Science from IIT Bombay",
+      "gpa": "8.5/10",
+      "englishProficiency": "IELTS 7.5",
+      "personalStatement": "Passionate about artificial intelligence and machine learning with 3 years of industry experience.",
+      "workExperience": "Software Engineer at TCS (2018-2021), Senior Developer at Infosys (2021-2023)"
+    },
+    "pdfGenerated": true,
+    "lastUpdated": "2025-09-16T05:27:45.359Z"
+  },
+  {
+    "id": "2",
+    "studentName": "Priya Sharma",
+    "email": "priya.sharma@email.com",
+    "phone": "+91 87654 32109",
+    "agencyId": "2",
+    "agencyName": "Study Abroad Consultants",
+    "collegeId": "2",
+    "collegeName": "Stanford University",
+    "courseId": "2",
+    "courseName": "Master of Business Administration",
+    "status": "processing",
+    "submittedAt": "2024-01-28",
+    "fees": 85000,
+    "applicationId": "APP-2024-002",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "gmat_scores.pdf",
+      "work_experience.pdf"
+    ],
+    "pendingDocuments": [
+      "Recommendation Letter",
+      "Financial Documents"
+    ],
+    "academicRecords": [
+      {
+        "level": "High School",
+        "board": "CBSE",
+        "year": "2012",
+        "obtainedMarks": "475",
+        "percentage": "95.0"
+      },
+      {
+        "level": "Intermediate",
+        "board": "CBSE",
+        "year": "2014",
+        "obtainedMarks": "480",
+        "percentage": "96.0"
+      },
+      {
+        "level": "Bachelor's",
+        "board": "Delhi University",
+        "year": "2017",
+        "obtainedMarks": "9.2",
+        "percentage": "92.0"
+      },
+      {
+        "level": "Master's",
+        "board": "XLRI",
+        "year": "2019",
+        "obtainedMarks": "8.8",
+        "percentage": "88.0"
+      }
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1994-07-22",
+      "nationality": "Indian",
+      "address": "456 Business Avenue, Delhi, India",
+      "previousEducation": "Bachelor of Commerce from Delhi University, MBA from XLRI",
+      "gpa": "9.2/10",
+      "englishProficiency": "TOEFL 110",
+      "personalStatement": "Experienced business analyst seeking to advance leadership skills in technology management.",
+      "workExperience": "Business Analyst at McKinsey (2019-2022), Senior Consultant at Deloitte (2022-2024)"
+    },
+    "pdfGenerated": false,
+    "lastUpdated": "2024-02-08"
+  },
+  {
+    "id": "3",
+    "studentName": "Rahul Kumar",
+    "email": "rahul.kumar@email.com",
+    "phone": "+91 76543 21098",
+    "agencyId": "3",
+    "agencyName": "Dream University Consultants",
+    "collegeId": "3",
+    "collegeName": "University of Oxford",
+    "courseId": "3",
+    "courseName": "Master of Science in Data Science",
+    "status": "pending",
+    "submittedAt": "2024-02-01",
+    "fees": 65000,
+    "applicationId": "APP-2024-003",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "gre_scores.pdf",
+      "cv.pdf"
+    ],
+    "academicRecords": [
+      {
+        "level": "High School",
+        "board": "Karnataka State Board",
+        "year": "2014",
+        "obtainedMarks": "580",
+        "percentage": "96.7"
+      },
+      {
+        "level": "Intermediate",
+        "board": "Karnataka State Board",
+        "year": "2016",
+        "obtainedMarks": "595",
+        "percentage": "99.2"
+      },
+      {
+        "level": "Bachelor's",
+        "board": "NIT Surathkal",
+        "year": "2020",
+        "obtainedMarks": "8.8",
+        "percentage": "88.0"
+      }
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1996-11-05",
+      "nationality": "Indian",
+      "address": "789 Data Lane, Bangalore, Karnataka, India",
+      "previousEducation": "Bachelor of Engineering in Computer Science from NIT Surathkal",
+      "gpa": "8.8/10",
+      "englishProficiency": "IELTS 8.0",
+      "personalStatement": "Data scientist with a passion for machine learning and statistical analysis.",
+      "workExperience": "Data Analyst at Amazon (2020-2022), Data Scientist at Flipkart (2022-2024)"
+    },
+    "pdfGenerated": true,
+    "lastUpdated": "2024-02-05"
+  },
+  {
+    "id": "4",
+    "studentName": "Sneha Reddy",
+    "email": "sneha.reddy@email.com",
+    "phone": "+91 98765 12345",
+    "agencyId": "1",
+    "agencyName": "Global Education Partners",
+    "collegeId": "4",
+    "collegeName": "University of Toronto",
+    "courseId": "4",
+    "courseName": "Master of Engineering in Electrical Engineering",
+    "status": "approved",
+    "submittedAt": "2024-01-30",
+    "fees": 55000,
+    "applicationId": "APP-2024-004",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "toefl_scores.pdf",
+      "portfolio.pdf"
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1997-04-18",
+      "nationality": "Indian",
+      "address": "234 Engineering Road, Hyderabad, Telangana, India",
+      "previousEducation": "Bachelor of Technology in Electrical Engineering from BITS Pilani",
+      "gpa": "9.0/10",
+      "englishProficiency": "TOEFL 112",
+      "personalStatement": "Electrical engineer with a focus on renewable energy systems and smart grids.",
+      "workExperience": "Electrical Engineer at Siemens (2021-2023), Project Engineer at ABB (2023-2024)"
+    },
+    "pdfGenerated": true,
+    "lastUpdated": "2024-02-07"
+  },
+  {
+    "id": "5",
+    "studentName": "Arjun Mehta",
+    "email": "arjun.mehta@email.com",
+    "phone": "+91 87654 98765",
+    "agencyId": "2",
+    "agencyName": "Study Abroad Consultants",
+    "collegeId": "5",
+    "collegeName": "Indian Institute of Technology Delhi",
+    "courseId": "5",
+    "courseName": "Master of Technology in Computer Science",
+    "status": "rejected",
+    "submittedAt": "2024-01-20",
+    "fees": 25000,
+    "applicationId": "APP-2024-005",
+    "documents": [
+      "transcript.pdf",
+      "gate_scores.pdf",
+      "sop.pdf"
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1998-09-30",
+      "nationality": "Indian",
+      "address": "567 Tech Park, Pune, Maharashtra, India",
+      "previousEducation": "Bachelor of Engineering in Information Technology from Pune University",
+      "gpa": "7.8/10",
+      "englishProficiency": "IELTS 7.0",
+      "personalStatement": "Software developer with interest in algorithms and competitive programming.",
+      "workExperience": "Software Developer at Wipro (2022-2024)"
+    },
+    "pdfGenerated": false,
+    "lastUpdated": "2024-01-25"
+  },
+  {
+    "id": "6",
+    "studentName": "Kavya Singh",
+    "email": "kavya.singh@email.com",
+    "phone": "+91 99887 65432",
+    "agencyId": "4",
+    "agencyName": "Elite Education Services",
+    "collegeId": "1",
+    "collegeName": "Massachusetts Institute of Technology",
+    "courseId": "6",
+    "courseName": "Master of Science in Artificial Intelligence",
+    "status": "processing",
+    "submittedAt": "2024-02-05",
+    "fees": 80000,
+    "applicationId": "APP-2024-006",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "gre_scores.pdf",
+      "research_papers.pdf"
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1996-12-15",
+      "nationality": "Indian",
+      "address": "890 AI Avenue, Chennai, Tamil Nadu, India",
+      "previousEducation": "Bachelor of Technology in Computer Science from IIT Madras",
+      "gpa": "9.5/10",
+      "englishProficiency": "TOEFL 118",
+      "personalStatement": "AI researcher with publications in top-tier conferences and journals.",
+      "workExperience": "Research Intern at Google AI (2022), AI Engineer at Microsoft Research (2022-2024)"
+    },
+    "pdfGenerated": true,
+    "lastUpdated": "2024-02-10"
+  },
+  {
+    "id": "7",
+    "studentName": "Vikram Malhotra",
+    "email": "vikram.malhotra@email.com",
+    "phone": "+91 98765 87654",
+    "agencyId": "5",
+    "agencyName": "GrindX Education Services",
+    "collegeId": "2",
+    "collegeName": "Stanford University",
+    "courseId": "7",
+    "courseName": "Master of Science in Computer Science",
+    "status": "processing",
+    "submittedAt": "2024-02-08",
+    "fees": 78000,
+    "applicationId": "APP-2024-007",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "gre_scores.pdf",
+      "recommendation_letters.pdf"
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1997-08-22",
+      "nationality": "Indian",
+      "address": "123 Tech Park, Bangalore, Karnataka, India",
+      "previousEducation": "Bachelor of Technology in Computer Science from IIT Bombay",
+      "gpa": "9.3/10",
+      "englishProficiency": "TOEFL 115",
+      "personalStatement": "Software engineer with a passion for distributed systems and cloud computing.",
+      "workExperience": "Software Engineer at Google (2021-2023), Senior Engineer at Amazon (2023-2024)"
+    },
+    "pdfGenerated": false,
+    "lastUpdated": "2024-02-10"
+  },
+  {
+    "id": "8",
+    "studentName": "Neha Gupta",
+    "email": "neha.gupta@email.com",
+    "phone": "+91 87654 76543",
+    "agencyId": "5",
+    "agencyName": "GrindX Education Services",
+    "collegeId": "3",
+    "collegeName": "University of Oxford",
+    "courseId": "8",
+    "courseName": "Master of Science in Machine Learning",
+    "status": "pending",
+    "submittedAt": "2024-02-10",
+    "fees": 70000,
+    "applicationId": "APP-2024-008",
+    "documents": [
+      "passport.pdf",
+      "transcript.pdf",
+      "gre_scores.pdf",
+      "research_proposal.pdf"
+    ],
+    "studentDetails": {
+      "dateOfBirth": "1998-05-15",
+      "nationality": "Indian",
+      "address": "456 ML Street, Bangalore, Karnataka, India",
+      "previousEducation": "Bachelor of Engineering in Computer Science from BITS Pilani",
+      "gpa": "9.1/10",
+      "englishProficiency": "IELTS 8.5",
+      "personalStatement": "Machine learning researcher with a focus on natural language processing and computer vision.",
+      "workExperience": "ML Engineer at Microsoft (2022-2024)"
+    },
+    "pdfGenerated": false,
+    "lastUpdated": "2024-02-10"
+  }
+]
