@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+export function broadcastEvent(event: any) {
+  // Simple event broadcasting - in production you'd use Redis or similar
+  console.log('Broadcasting event:', event)
+}
+
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder()
   
