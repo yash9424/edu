@@ -1,0 +1,301 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Custom dark mode selector */
+
+:root {
+  /* Updated color palette for education management system */
+  --background: oklch(1 0 0); /* #ffffff - Main background */
+  --foreground: oklch(0.15 0 0); /* Even darker primary text for better contrast */
+  --card: oklch(0.98 0.02 142); /* #f0fdf4 - Soft green background for cards */
+  --card-foreground: oklch(0.15 0 0); /* Even darker text on cards for better contrast */
+  --popover: oklch(1 0 0); /* #ffffff - Popover background */
+  --popover-foreground: oklch(0.15 0 0); /* Even darker popover text for better contrast */
+  --primary: oklch(0.45 0.15 142); /* #15803d - Primary green */
+  --primary-foreground: oklch(1 0 0); /* #ffffff - Text on primary */
+  --secondary: oklch(0.65 0.18 35); /* #ff6b35 - Bright orange accent */
+  --secondary-foreground: oklch(1 0 0); /* #ffffff - Text on secondary */
+  --muted: oklch(0.98 0.02 142); /* #f0fdf4 - Muted backgrounds */
+  --muted-foreground: oklch(0.25 0 0); /* Even darker muted text for better contrast */
+  --accent: oklch(0.65 0.18 35); /* #ff6b35 - Bright orange accent */
+  --accent-foreground: oklch(1 0 0); /* Text on accent */
+  --destructive: oklch(0.55 0.25 15); /* #be123c - Error color */
+  --destructive-foreground: oklch(1 0 0); /* Text on destructive */
+  --border: oklch(0.92 0 0); /* #e5e7eb - Border color */
+  --input: oklch(0.98 0 0); /* #f9fafb - Input background */
+  --ring: oklch(0.65 0.15 180 / 0.5); /* Focus ring */
+  /* Use HSL triples so hsl(var(--chart-n)) works in SVG */
+  --chart-1: 142 62% 36%; /* Primary Green */
+  --chart-2: 150 45% 50%; /* Light Green */
+  --chart-3: 140 55% 28%; /* Dark Green */
+  --chart-4: 150 40% 72%; /* Pale Green */
+  --chart-5: 135 60% 22%; /* Deep Green */
+  --radius: 0.5rem;
+  --sidebar: oklch(0.98 0.02 142); /* Sidebar background */
+  --sidebar-foreground: oklch(0.15 0 0); /* Even darker sidebar text for better contrast */
+  --sidebar-primary: oklch(0.45 0.15 142);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.65 0.18 35); /* Bright orange for sidebar accent */
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.92 0 0);
+  --sidebar-ring: oklch(0.65 0.15 180 / 0.5);
+}
+
+.dark {
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.12 0.02 142);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.08 0 0);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.55 0.15 142);
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.75 0.18 35); /* Brighter orange for dark mode */
+  --secondary-foreground: oklch(0.08 0 0);
+  --muted: oklch(0.15 0.02 142);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.75 0.18 35); /* Brighter orange for dark mode */
+  --accent-foreground: oklch(0.08 0 0);
+  --destructive: oklch(0.45 0.25 15);
+  --destructive-foreground: oklch(0.95 0 0);
+  --border: oklch(0.15 0 0);
+  --input: oklch(0.15 0 0);
+  --ring: oklch(0.65 0.15 180 / 0.5);
+  /* Use HSL triples so hsl(var(--chart-n)) works in SVG (dark) */
+  --chart-1: 142 60% 45%; /* Bright Green (dark) */
+  --chart-2: 150 48% 56%; /* Light Green (dark) */
+  --chart-3: 140 60% 38%; /* Medium Green (dark) */
+  --chart-4: 150 42% 70%; /* Pale Green (dark) */
+  --chart-5: 135 62% 32%; /* Deep Green (dark) */
+  --sidebar: oklch(0.12 0.02 142);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.55 0.15 142);
+  --sidebar-primary-foreground: oklch(0.95 0 0);
+  --sidebar-accent: oklch(0.75 0.18 35); /* Bright orange for dark sidebar */
+  --sidebar-accent-foreground: oklch(0.08 0 0);
+  --sidebar-border: oklch(0.15 0 0);
+  --sidebar-ring: oklch(0.65 0.15 180 / 0.5);
+}
+
+/* Theme variables */
+:root {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Base styles */
+* {
+  border-color: var(--border);
+  outline-color: rgba(var(--ring), 0.5);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Ensure readable text for common elements in light/dark modes */
+html:not(.dark) p,
+html:not(.dark) span,
+html:not(.dark) div {
+  color: #000 !important;
+}
+
+html.dark p,
+html.dark span,
+html.dark div {
+  color: var(--foreground) !important;
+}
+
+/* Minimal Green Chart Effects */
+@layer components {
+  .chart-card {
+    position: relative;
+    background: linear-gradient(135deg, 
+      hsl(var(--card)) 0%, 
+      hsl(var(--muted)) 100%
+    );
+    border: 1px solid hsl(var(--chart-1) / 0.2);
+    transition: all 0.2s ease;
+  }
+
+  .chart-card:hover {
+    border-color: hsl(var(--chart-1) / 0.4);
+    box-shadow: 0 4px 12px hsl(var(--chart-1) / 0.1);
+  }
+
+  /* Subtle chart line styling */
+  .recharts-line-curve {
+    filter: drop-shadow(0 1px 2px hsl(var(--chart-1) / 0.2));
+  }
+
+  /* Minimal pie chart hover effect */
+  .recharts-pie-sector:hover {
+    filter: brightness(1.1);
+    transition: filter 0.2s ease;
+  }
+
+  /* Clean chart dots */
+  .recharts-dot {
+    filter: drop-shadow(0 1px 2px hsl(var(--foreground) / 0.1));
+  }
+
+  /* Enhanced chart container */
+  .recharts-wrapper {
+    border-radius: 8px;
+    overflow: visible;
+  }
+}
+
+/* Navigation hover styles */
+.group:hover .group-hover\:opacity-100 {
+  background-color: white !important;
+  color: black !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 4px;
+}
+
+html.dark .group:hover .group-hover\:opacity-100 {
+  background-color: #1a1a1a !important;
+  color: white !important;
+}
+
+/* Remove empty ruleset */
+/* Custom dark mode selector */
+.dark * {
+  color-scheme: dark;
+}
+
+html.dark .group:hover .group-hover\:opacity-100 {
+  background-color: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+}
+
+/* Button hover effects for agency portal */
+.agency-portal button:hover,
+.agency-portal a[role="button"]:hover,
+.agency-portal .button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Primary button hover effect */
+.agency-portal button[class*="primary"]:hover,
+.agency-portal a[class*="primary"]:hover {
+  background-color: var(--primary) !important;
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
+}
+
+/* Secondary button hover effect */
+.agency-portal button[class*="secondary"]:hover,
+.agency-portal a[class*="secondary"]:hover {
+  background-color: var(--secondary) !important;
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Outline button hover effect */
+.agency-portal button[class*="outline"]:hover,
+.agency-portal a[class*="outline"]:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  background-color: rgba(21, 128, 61, 0.05) !important;
+}
+
+/* Ghost button hover effect */
+.agency-portal button[class*="ghost"]:hover,
+.agency-portal a[class*="ghost"]:hover {
+  background-color: rgba(21, 128, 61, 0.1) !important;
+  color: var(--primary) !important;
+}
+
+/* Custom dark mode selector */
+.dark * {
+  color-scheme: dark;
+}
+
+html.dark .group:hover .group-hover\:opacity-100 {
+  background-color: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+}
+
+/* Button hover effects for agency portal */
+.agency-portal button:hover,
+.agency-portal a[role="button"]:hover,
+.agency-portal .button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Primary button hover effect */
+.agency-portal button[class*="primary"]:hover,
+.agency-portal a[class*="primary"]:hover {
+  background-color: var(--primary) !important;
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
+}
+
+/* Secondary button hover effect */
+.agency-portal button[class*="secondary"]:hover,
+.agency-portal a[class*="secondary"]:hover {
+  background-color: var(--secondary) !important;
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Outline button hover effect */
+.agency-portal button[class*="outline"]:hover,
+.agency-portal a[class*="outline"]:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  background-color: rgba(21, 128, 61, 0.05) !important;
+}
+
+/* Ghost button hover effect */
+.agency-portal button[class*="ghost"]:hover,
+.agency-portal a[class*="ghost"]:hover {
+  background-color: rgba(21, 128, 61, 0.1) !important;
+  color: var(--primary) !important;
+}
+
+/* Removed: global pseudo-element overlay for floating UI. It caused page content backgrounds (p/div) to appear washed out under menus. */
