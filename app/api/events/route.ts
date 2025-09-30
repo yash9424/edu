@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Force dynamic rendering for SSE
+export const dynamic = 'force-dynamic'
+
+// Export broadcastEvent function for other modules
+export function broadcastEvent(event: any) {
+  // In a real implementation, this would broadcast to connected SSE clients
+  console.log('Broadcasting event:', event)
+}
+
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder()
   

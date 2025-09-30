@@ -1,8 +1,26 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { decrypt } from "./lib/auth"
+import { jwtVerify } from "jose"
 
 const protectedRoutes = ["/admin", "/agency", "/dashboard"]
 const publicRoutes = ["/login", "/"]
+
+const secretKey = process.env.JWT_SECRET || "your-secret-key-change-in-production"
+const key = new TextEncoder().encode(secretKey)
+
+async function decrypt(input: string | undefined): Promise<any> {
+  if (!input) {
+    return null
+  }
+
+  try {
+    const { payload } = await jwtVerify(input, key, {
+      algorithms: ["HS256"],
+    })
+    return payload
+  } catch (error) {
+    return null
+  }
+}
 
 export default async function middleware(req: NextRequest) {
   try {
@@ -21,7 +39,6 @@ export default async function middleware(req: NextRequest) {
     
     try {
       session = cookie ? await decrypt(cookie) : null
-      console.log('Middleware session:', path, session ? 'authenticated' : 'unauthenticated')
     } catch (error) {
       console.error('Session decrypt error:', error)
       // Invalid session, clear it
@@ -53,37 +70,8 @@ export default async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/login", req.nextUrl))
     }
 
-    // Role-based access control and user status check
+    // Role-based access control
     if (session) {
-      // Check if user is still active (only for protected routes)
-      if (isProtectedRoute) {
-        try {
-          const statusResponse = await fetch(new URL('/api/auth/check-status', req.nextUrl), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: session.user.id,
-              email: session.user.email
-            })
-          })
-          
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json()
-            if (!statusData.active) {
-              const queryParam = statusData.reason === 'agency_deactivated' ? 'agency_deactivated=true' : 'deactivated=true'
-              const response = NextResponse.redirect(new URL(`/login?${queryParam}`, req.nextUrl))
-              response.cookies.delete("session")
-              return response
-            }
-          }
-        } catch (error) {
-          console.error('Error checking user status:', error)
-          // Continue with normal flow if status check fails
-        }
-      }
-      
       // Only redirect if user is trying to access the wrong dashboard
       if (path.startsWith("/admin") && session.user.role !== "admin") {
         return NextResponse.redirect(new URL("/agency", req.nextUrl))
