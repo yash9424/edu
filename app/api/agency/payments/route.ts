@@ -95,3 +95,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update payment" }, { status: 500 })
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    await connectDB()
+    
+    const body = await request.json()
+    const { paymentId, paymentAmount, leadStatus, notes } = body
+    
+    const payment = await Payment.findById(paymentId)
+    
+    if (!payment) {
+      return NextResponse.json({ error: "Payment record not found" }, { status: 404 })
+    }
+    
+    if (paymentAmount !== undefined) payment.applicationFee = paymentAmount
+    if (leadStatus) payment.leadStatus = leadStatus
+    if (notes !== undefined) payment.notes = notes
+    
+    await payment.save()
+    
+    return NextResponse.json({ success: true, payment })
+  } catch (error) {
+    console.error('Error updating payment:', error)
+    return NextResponse.json({ error: "Failed to update payment" }, { status: 500 })
+  }
+}

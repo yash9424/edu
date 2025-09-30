@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, FileText, Upload, CreditCard, Settings, LogOut, GraduationCap, ChevronRight, X } from "lucide-react"
+import { LayoutDashboard, FileText, Upload, CreditCard, Settings, LogOut, GraduationCap, ChevronRight, X, ChevronDown } from "lucide-react"
 
 const navigation = [
   {
@@ -27,6 +27,12 @@ const navigation = [
     name: "Payments",
     href: "/agency/payments",
     icon: CreditCard,
+    subItems: [
+      {
+        name: "Offline Payments",
+        href: "/agency/payments/offline",
+      },
+    ],
   },
   {
     name: "Settings",
@@ -37,8 +43,17 @@ const navigation = [
 
 export function AgencySidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
   const pathname = usePathname()
   const router = useRouter()
+
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(name => name !== itemName)
+        : [...prev, itemName]
+    )
+  }
 
   const handleLogout = async () => {
     try {
@@ -99,32 +114,74 @@ export function AgencySidebar() {
         <nav className="flex-1 px-2 py-6 space-y-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href
+            const hasSubItems = item.subItems && item.subItems.length > 0
+            const isExpanded = expandedItems.includes(item.name)
+            const hasActiveSubItem = hasSubItems && item.subItems?.some(subItem => pathname === subItem.href)
+            
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center text-sm font-medium rounded-lg transition-colors group relative",
-                  isCollapsed ? "px-3 py-3 justify-center" : "px-4 py-3",
-                  isActive
-                    ? "bg-green-100 text-green-700 border-r-2 border-green-600"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-                )}
-                title={isCollapsed ? item.name : undefined}
-              >
-                <item.icon className={cn(
-                  "h-5 w-5 flex-shrink-0",
-                  isCollapsed ? "" : "mr-3"
-                )} />
-                {!isCollapsed && (
-                  <span className="truncate">{item.name}</span>
-                )}
-                {isCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                    {item.name}
+              <div key={item.name}>
+                <div className="relative">
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center text-sm font-medium rounded-lg transition-colors group relative",
+                      isCollapsed ? "px-3 py-3 justify-center" : "px-4 py-3",
+                      isActive
+                        ? "bg-green-100 text-green-700 border-r-2 border-green-600"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    )}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <item.icon className={cn(
+                      "h-5 w-5 flex-shrink-0",
+                      isCollapsed ? "" : "mr-3"
+                    )} />
+                    {!isCollapsed && (
+                      <span className="truncate">{item.name}</span>
+                    )}
+                    {isCollapsed && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        {item.name}
+                      </div>
+                    )}
+                  </Link>
+                  
+                  {hasSubItems && !isCollapsed && (
+                    <button
+                      onClick={() => toggleExpanded(item.name)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded"
+                    >
+                      <ChevronDown className={cn(
+                        "h-4 w-4 transition-transform",
+                        isExpanded ? "rotate-180" : ""
+                      )} />
+                    </button>
+                  )}
+                </div>
+                
+                {/* Sub Items */}
+                {hasSubItems && isExpanded && !isCollapsed && (
+                  <div className="ml-8 mt-1 space-y-1">
+                    {item.subItems?.map((subItem) => {
+                      const isSubActive = pathname === subItem.href
+                      return (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.href}
+                          className={cn(
+                            "flex items-center text-sm rounded-lg transition-colors px-3 py-2",
+                            isSubActive
+                              ? "bg-green-50 text-green-700 border-r-2 border-green-600"
+                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                          )}
+                        >
+                          <span className="truncate">{subItem.name}</span>
+                        </Link>
+                      )
+                    })}
                   </div>
                 )}
-              </Link>
+              </div>
             )
           })}
         </nav>

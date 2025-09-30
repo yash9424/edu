@@ -18,7 +18,8 @@ import {
   ChevronRight,
   BarChart as FileBarChart,
   TrendingUp,
-  ShieldCheck as Shield
+  ShieldCheck as Shield,
+  ChevronDown
 } from "lucide-react"
 
 const navigation = [
@@ -46,8 +47,13 @@ const navigation = [
     name: "Payments",
     href: "/admin/payments",
     icon: CreditCard,
+    subItems: [
+      {
+        name: "Offline Payments",
+        href: "/admin/payments/offline",
+      },
+    ],
   },
-
   {
     name: "Reports",
     href: "/admin/reports",
@@ -63,10 +69,18 @@ const navigation = [
 export function AdminSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [isHydrated, setIsHydrated] = useState(false)
 
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(name => name !== itemName)
+        : [...prev, itemName]
+    )
+  }
+
   useEffect(() => {
-    // Set hydrated state and load localStorage value after mount
     setIsHydrated(true)
     try {
       const storedValue = localStorage.getItem("admin-sidebar-collapsed")
@@ -86,7 +100,6 @@ export function AdminSidebar() {
   const toggleSidebar = useCallback(() => {
     setCollapsed(prevState => {
       const newState = !prevState
-      // Store the state in localStorage for persistence
       if (isHydrated) {
         try {
           localStorage.setItem("admin-sidebar-collapsed", String(newState))
@@ -103,7 +116,6 @@ export function AdminSidebar() {
       "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
       collapsed ? "w-20" : "w-64"
     )}>
-      {/* Header */}
       <div className={cn(
         "border-b border-gray-200 flex items-center", 
         collapsed ? "p-4 justify-center" : "p-6"
@@ -135,38 +147,72 @@ export function AdminSidebar() {
         </Button>
       </div>
 
-      {/* Navigation */}
       <nav className={cn(
         "flex-1", 
         collapsed ? "p-2 space-y-2" : "p-4 space-y-2"
       )}>
-        {useMemo(() => {
-           return navigation.map((item) => {
-             const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+        {navigation.map((item) => {
+          const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+          const hasSubItems = item.subItems && item.subItems.length > 0
+          const isExpanded = expandedItems.includes(item.name)
 
-             return (
-               <Link
-                 key={item.name}
-                 href={item.href}
-                 prefetch={true}
-                 className={cn(
-                   "flex items-center rounded-lg text-sm font-medium transition-colors",
-                   collapsed ? "flex-col py-3 px-0 space-y-1" : "space-x-3 px-3 py-2",
-                   isActive
-                     ? "bg-green-50 text-green-700 border border-green-200"
-                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                 )}
-                 title={collapsed ? item.name : ""}
-               >
-                 <item.icon className="w-5 h-5" />
-                 {!collapsed && <span>{item.name}</span>}
-               </Link>
-             )
-           })
-         }, [pathname, collapsed])}
+          return (
+            <div key={item.name}>
+              <div className="relative">
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center rounded-lg text-sm font-medium transition-colors",
+                    collapsed ? "flex-col py-3 px-0 space-y-1" : "space-x-3 px-3 py-2",
+                    isActive
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  )}
+                  title={collapsed ? item.name : ""}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {!collapsed && <span>{item.name}</span>}
+                </Link>
+                
+                {hasSubItems && !collapsed && (
+                  <button
+                    onClick={() => toggleExpanded(item.name)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded"
+                  >
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      isExpanded ? "rotate-180" : ""
+                    )} />
+                  </button>
+                )}
+              </div>
+              
+              {hasSubItems && isExpanded && !collapsed && (
+                <div className="ml-8 mt-1 space-y-1">
+                  {item.subItems?.map((subItem) => {
+                    const isSubActive = pathname === subItem.href
+                    return (
+                      <Link
+                        key={subItem.name}
+                        href={subItem.href}
+                        className={cn(
+                          "flex items-center text-sm rounded-lg transition-colors px-3 py-2",
+                          isSubActive
+                            ? "bg-green-50 text-green-700 border border-green-200"
+                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                        )}
+                      >
+                        <span className="truncate">{subItem.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
-      {/* Footer */}
       <div className={cn(
         "border-t border-gray-200",
         collapsed ? "p-2" : "p-4"

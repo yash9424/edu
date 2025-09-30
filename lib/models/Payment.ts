@@ -19,6 +19,14 @@ const PaymentSchema = new mongoose.Schema({
   paymentMethod: { type: String },
   transactionId: { type: String },
   paymentLink: { type: String }, // Individual payment link for this specific payment
+  paymentReceipt: {
+    filename: String,
+    size: Number,
+    mimeType: String,
+    data: String,
+    uploadedAt: Date,
+    uploadedBy: String
+  },
   
   // Status tracking
   paymentStatus: { 

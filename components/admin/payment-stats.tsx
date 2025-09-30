@@ -72,10 +72,10 @@ export function PaymentStats() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">₹{paymentStats.totalRevenue.toLocaleString()}</div>
+          <div className="text-2xl font-bold">₹{(paymentStats.totalRevenue || 0).toLocaleString()}</div>
           <div className="flex items-center gap-1 mt-1">
             <TrendingUp className="h-3 w-3 text-primary" />
-            <span className="text-xs text-primary">+{paymentStats.monthlyGrowth}% this month</span>
+            <span className="text-xs text-primary">+{paymentStats.monthlyGrowth || 0}% this month</span>
           </div>
         </CardContent>
       </Card>

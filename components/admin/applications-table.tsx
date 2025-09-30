@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Eye, MoreHorizontal, CheckCircle, XCircle, Clock, Search, Filter, Edit, FileText, AlertCircle } from "lucide-react"
+import { Eye, MoreHorizontal, CheckCircle, XCircle, Clock, Search, Filter, Edit, FileText, AlertCircle, Download } from "lucide-react"
 import { Application } from "@/lib/data-store"
 import PDFViewer from "@/components/pdf-viewer"
 import { toast } from "sonner"
@@ -595,6 +595,110 @@ export function ApplicationsTable() {
     }
   }
 
+  const handleDownloadDocuments = (application: Application) => {
+    console.log('Application:', application)
+    console.log('All documents:', documents)
+    
+    const appId = application.applicationId || application._id || application.id
+    const appDocs = documents.filter(doc => {
+      console.log('Checking doc:', doc.applicationId, 'against:', appId)
+      return doc.applicationId === appId
+    })
+    
+    console.log('Filtered documents:', appDocs)
+    
+    if (appDocs.length === 0) {
+      toast.error('No documents available for this application')
+      return
+    }
+    
+    let downloadCount = 0
+    
+    appDocs.forEach(async (doc: any, index: number) => {
+      console.log('Processing document:', doc)
+      console.log('Document keys:', Object.keys(doc))
+      
+      if (doc.fileData) {
+        try {
+          let blob: Blob
+          
+          if (doc.fileData.startsWith('data:')) {
+            // Data URL format
+            const response = fetch(doc.fileData)
+            response.then(res => res.blob()).then(blobData => {
+              const url = URL.createObjectURL(blobData)
+              const link = document.createElement('a')
+              link.href = url
+              link.download = doc.name || `document_${doc.type}_${index + 1}.pdf`
+              link.click()
+              URL.revokeObjectURL(url)
+            })
+          } else {
+            // Plain base64
+            const base64Data = doc.fileData.split(',')[1] || doc.fileData
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            blob = new Blob([byteArray], { type: 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = doc.name || `document_${doc.type}_${index + 1}.pdf`
+            link.click()
+            URL.revokeObjectURL(url)
+          }
+          
+          downloadCount++
+        } catch (error) {
+          console.error('Error downloading document:', error)
+          toast.error(`Failed to download ${doc.name}`)
+        }
+      } else {
+        console.log('No fileData for document, trying to fetch from API')
+        try {
+          const response = await fetch(`/api/admin/documents/${doc.id}`, {
+            credentials: 'include'
+          })
+          if (response.ok) {
+            const docData = await response.json()
+            console.log('Fetched document data:', docData)
+            if (docData.fileData) {
+              // Download the fetched document
+              const base64Data = docData.fileData.split(',')[1] || docData.fileData
+              const byteCharacters = atob(base64Data)
+              const byteNumbers = new Array(byteCharacters.length)
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i)
+              }
+              const byteArray = new Uint8Array(byteNumbers)
+              const blob = new Blob([byteArray], { type: 'application/pdf' })
+              
+              const url = URL.createObjectURL(blob)
+              const link = document.createElement('a')
+              link.href = url
+              link.download = doc.name || `document_${doc.type}_${index + 1}.pdf`
+              link.click()
+              URL.revokeObjectURL(url)
+              downloadCount++
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching document:', error)
+        }
+      }
+    })
+    
+    if (downloadCount > 0) {
+      toast.success(`Downloaded ${downloadCount} documents`)
+    } else {
+      toast.error('No documents could be downloaded')
+    }
+  }
+
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          app.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -781,6 +885,10 @@ export function ApplicationsTable() {
                             <DropdownMenuItem onClick={() => setViewingApplication(application)}>
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadDocuments(application)}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Documents
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => updateApplicationStatus(application._id || application.id, 'approved')}>

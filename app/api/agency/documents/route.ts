@@ -63,6 +63,32 @@ export async function POST(request: NextRequest) {
       fileData: fileData || '',
       status: 'pending'
     })
+    
+    // Also update Payment model documents field
+    const Payment = (await import('@/lib/models/Payment')).default
+    const payment = await Payment.findOne({ 
+      $or: [
+        { 'applicationId.applicationId': applicationId },
+        { applicationId: applicationId },
+        { studentName: { $regex: new RegExp(applicationId, 'i') } }
+      ]
+    })
+    
+    if (payment) {
+      if (!payment.documents) payment.documents = {}
+      
+      payment.documents[type] = {
+        status: 'uploaded',
+        uploadedAt: new Date(),
+        adminRequested: false,
+        documentId: document._id.toString()
+      }
+      
+      await payment.save()
+      console.log('Updated payment documents for:', applicationId, 'Payment ID:', payment._id)
+    } else {
+      console.log('No payment found for applicationId:', applicationId)
+    }
 
     return NextResponse.json({ 
       success: true, 

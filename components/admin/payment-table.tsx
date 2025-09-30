@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Eye, MoreHorizontal, CheckCircle, XCircle, Clock, FileText, CreditCard, Edit } from "lucide-react"
+import { Eye, MoreHorizontal, CheckCircle, XCircle, Clock, FileText, CreditCard, Edit, Download } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -88,11 +88,12 @@ export function PaymentTable() {
   const fetchPayments = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/payments', {
+      const response = await fetch('/api/admin/payments?t=' + Date.now(), {
         credentials: 'include'
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched payments:', data.payments?.length, 'payments')
         setPayments(data.payments || [])
       }
     } catch (error) {
@@ -152,23 +153,6 @@ export function PaymentTable() {
     }
   }
 
-  const handleAdminApproval = async (paymentId: string) => {
-    try {
-      const response = await fetch('/api/admin/payments', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ paymentId, paymentStatus: 'approved' })
-      })
-      
-      if (response.ok) {
-        fetchPayments()
-      }
-    } catch (error) {
-      console.error('Failed to approve payment:', error)
-    }
-  }
-
   const handleCreatePaymentRecord = async (applicationId: string) => {
     try {
       const response = await fetch('/api/admin/payments', {
@@ -186,10 +170,6 @@ export function PaymentTable() {
     }
   }
 
-  const handleDocumentRequest = async (paymentId: string, documentName: string) => {
-    console.log(`Requesting document ${documentName} for payment ${paymentId}`)
-  }
-
   const handleEditPayment = (payment: any) => {
     setSelectedPayment(payment)
     setEditFormData({
@@ -204,22 +184,6 @@ export function PaymentTable() {
     if (!selectedPayment) return
 
     try {
-      const updatedPayment = {
-        ...selectedPayment,
-        applicationFee: parseFloat(editFormData.paymentAmount) || selectedPayment.applicationFee,
-        leadStatus: editFormData.leadStatus,
-        notes: editFormData.notes
-      }
-
-      // Update local state immediately for better UX
-      setPayments(prev => prev.map((p: any) => 
-        p._id === selectedPayment._id ? updatedPayment : p
-      ))
-
-      console.log('Updating payment:', updatedPayment)
-      setEditDialogOpen(false)
-
-      // Make API call to update payment
       const response = await fetch('/api/admin/payments', {
         method: 'PUT',
         headers: {
@@ -235,38 +199,191 @@ export function PaymentTable() {
       })
 
       if (response.ok) {
-        console.log('Payment updated successfully')
-        // Refresh the payments list
+        setEditDialogOpen(false)
         fetchPayments()
-      } else {
-        console.error('Failed to update payment')
-        // Revert local state if API call failed
-        setPayments(prev => prev.map((p: any) => 
-          p._id === selectedPayment._id ? selectedPayment : p
-        ))
       }
     } catch (error) {
       console.error('Error updating payment:', error)
-      // Revert local state if error occurred
-      setPayments(prev => prev.map((p: any) => 
-        p._id === selectedPayment._id ? selectedPayment : p
-      ))
     }
   }
 
-  const getDocumentStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-      case "uploaded":
-        return "default"
-      case "pending":
-        return "secondary"
-      case "rejected":
-      case "missing":
-        return "destructive"
-      default:
-        return "secondary"
+  const handleDownloadSingleDocument = async (doc: any, paymentId?: string) => {
+    try {
+      if (doc.id && doc.id.length === 24) {
+        const response = await fetch(`/api/admin/documents/${doc.id}`, {
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const docData = await response.json()
+          if (docData.fileData) {
+            const base64Data = docData.fileData.split(',')[1] || docData.fileData
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = doc.name || `document_${doc.type}.pdf`
+            link.click()
+            URL.revokeObjectURL(url)
+            return
+          }
+        }
+      }
+      
+      if (paymentId && doc.type) {
+        const response = await fetch(`/api/admin/payments/${paymentId}/documents/${doc.type}`, {
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const docData = await response.json()
+          if (docData.fileData) {
+            const base64Data = docData.fileData.split(',')[1] || docData.fileData
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = doc.name || `${doc.type}.pdf`
+            link.click()
+            URL.revokeObjectURL(url)
+            return
+          }
+        }
+      }
+      
+      alert('Document not available for download')
+    } catch (error) {
+      console.error('Error downloading document:', error)
+      alert('Error downloading document')
     }
+  }
+
+  const handleDownloadReceipt = async (paymentId: string) => {
+    try {
+      const payment = payments.find(p => p._id === paymentId)
+      
+      if (payment?.paymentReceipt) {
+        if (payment.paymentReceipt.data) {
+          const byteCharacters = atob(payment.paymentReceipt.data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], { type: payment.paymentReceipt.mimeType || 'application/pdf' })
+          
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = payment.paymentReceipt.filename || 'receipt.pdf'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+          return
+        }
+      }
+      
+      const response = await fetch(`/api/admin/payments/receipt/${paymentId}`, {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.receipt?.data) {
+          const byteCharacters = atob(data.receipt.data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], { type: data.receipt.mimeType || 'application/pdf' })
+          
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = data.receipt.filename || 'receipt.pdf'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        } else {
+          alert('No receipt available for this payment')
+        }
+      } else {
+        alert('No receipt available for this payment')
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error)
+      alert('Error downloading receipt')
+    }
+  }
+
+  const handleDownloadDocuments = (payment: any) => {
+    const paymentAppId = payment.applicationId?.applicationId || payment.applicationId
+    
+    const collectionDocs = documents.filter(doc => doc.applicationId === paymentAppId)
+    
+    const paymentDocs = payment.documents ? Object.entries(payment.documents)
+      .filter(([_, doc]: [string, any]) => doc.status === 'uploaded' && doc.fileData)
+      .map(([type, doc]: [string, any]) => ({ id: type, name: `${type}.pdf`, type, isPaymentDoc: true })) : []
+    
+    const allUploadedDocs = [...collectionDocs, ...paymentDocs]
+    
+    if (allUploadedDocs.length === 0) {
+      alert('No uploaded documents available for download')
+      return
+    }
+    
+    allUploadedDocs.forEach(async (doc: any, index: number) => {
+      try {
+        let response, docData
+        
+        if (doc.isPaymentDoc) {
+          response = await fetch(`/api/admin/payments/${payment._id}/documents/${doc.type}`, {
+            credentials: 'include'
+          })
+        } else {
+          response = await fetch(`/api/admin/documents/${doc.id}`, {
+            credentials: 'include'
+          })
+        }
+        
+        if (response.ok) {
+          docData = await response.json()
+          if (docData.fileData) {
+            const base64Data = docData.fileData.split(',')[1] || docData.fileData
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = doc.name || `document_${doc.type}_${index + 1}.pdf`
+            link.click()
+            URL.revokeObjectURL(url)
+          }
+        }
+      } catch (error) {
+        console.error('Error downloading document:', error)
+      }
+    })
   }
 
   return (
@@ -288,7 +405,6 @@ export function PaymentTable() {
         </CardContent>
       </Card>
 
-
       <Tabs defaultValue="payments" className="w-full">
         <TabsList>
           <TabsTrigger value="payments">Payment Records ({payments.length})</TabsTrigger>
@@ -301,191 +417,165 @@ export function PaymentTable() {
               <CardTitle>Payment Transactions</CardTitle>
             </CardHeader>
             <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Payment ID</TableHead>
-              <TableHead>Student</TableHead>
-              <TableHead>Agency</TableHead>
-              <TableHead>College</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Documents</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
-                  Loading payments...
-                </TableCell>
-              </TableRow>
-            ) : payments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
-                  No payments found
-                </TableCell>
-              </TableRow>
-            ) : (
-              payments.map((payment) => {
-                const documents = Object.entries(payment.documents || {}).map(([type, doc]: [string, any]) => ({
-                  id: type,
-                  name: `${type}.pdf`,
-                  status: doc.status
-                }))
-                
-                return (
-                  <TableRow key={payment._id}>
-                    <TableCell>
-                      <div className="font-mono text-sm">PAY-{payment._id.slice(-6)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-balance">{payment.studentName}</div>
-                        <div className="text-sm text-muted-foreground">{payment.applicationId?.applicationId || 'N/A'}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-balance">{payment.agencyName}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-balance">{payment.collegeName}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div 
-                        className="font-medium cursor-pointer hover:text-blue-600 flex items-center gap-1"
-                        onClick={() => handleEditPayment(payment)}
-                      >
-                        ₹{payment.applicationFee}
-                        <Edit className="h-3 w-3 opacity-50" />
-                      </div>
-                      <div className="text-xs text-muted-foreground">{payment.paymentMethod || 'N/A'}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Badge variant={getStatusColor(payment.paymentStatus)} className="gap-1">
-                          {getStatusIcon(payment.paymentStatus)}
-                          {payment.paymentStatus}
-                        </Badge>
-                        {payment.agencyApproved && (
-                          <Badge variant="outline" className="gap-1">
-                            Agency Approved
-                          </Badge>
-                        )}
-                        {payment.verifiedAt && (
-                          <Badge variant="default" className="gap-1">
-                            Admin Approved
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {(() => {
-                          const paymentDocs = documents.filter(doc => 
-                            doc.applicationId === (payment.applicationId?.applicationId || payment.applicationId || payment._id)
-                          )
-                          return paymentDocs.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Payment ID</TableHead>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Agency</TableHead>
+                    <TableHead>College</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Documents</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        Loading payments...
+                      </TableCell>
+                    </TableRow>
+                  ) : payments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        No payments found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    payments.map((payment) => {
+                      const paymentDocs = payment.documents ? Object.entries(payment.documents)
+                        .filter(([_, doc]: [string, any]) => doc.status === 'uploaded' && doc.fileData)
+                        .map(([type, doc]: [string, any]) => ({ 
+                          id: type, 
+                          name: `${type}.pdf`, 
+                          type: type,
+                          status: doc.status,
+                          isPaymentDoc: true,
+                          ...doc 
+                        })) : []
+                      
+                      const paymentAppId = payment.applicationId?.applicationId || payment.applicationId
+                      const collectionDocs = documents.filter(doc => doc.applicationId === paymentAppId)
+                      
+                      const appDocs = [...paymentDocs, ...collectionDocs]
+                      
+                      return (
+                        <TableRow key={payment._id}>
+                          <TableCell>
+                            <div className="font-mono text-sm">PAY-{payment._id.slice(-6)}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-balance">{payment.studentName}</div>
+                              <div className="text-sm text-muted-foreground">{payment.applicationId?.applicationId || 'N/A'}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium text-balance">{payment.agencyName}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-balance">{payment.collegeName}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div 
+                              className="font-medium cursor-pointer hover:text-blue-600 flex items-center gap-1"
+                              onClick={() => handleEditPayment(payment)}
+                            >
+                              ₹{payment.applicationFee}
+                              <Edit className="h-3 w-3 opacity-50" />
+                            </div>
+                            <div className="text-xs text-muted-foreground">{payment.paymentMethod || 'N/A'}</div>
+                          </TableCell>
+                          <TableCell>
                             <div className="space-y-1">
-                              {paymentDocs.slice(0, 3).map((doc) => (
-                                <div key={doc.id} className="flex items-center gap-1">
-                                  <Badge variant={getDocumentStatusColor(doc.status)} className="text-xs">
-                                    {doc.status}
-                                  </Badge>
-                                  <span className="text-xs truncate max-w-[100px]">{doc.name}</span>
+                              <Badge variant={getStatusColor(payment.paymentStatus)} className="gap-1">
+                                {getStatusIcon(payment.paymentStatus)}
+                                {payment.paymentStatus}
+                              </Badge>
+                              {payment.paymentReceipt && (
+                                <Badge variant="secondary" className="gap-1">
+                                  <FileText className="h-3 w-3" />
+                                  Receipt Available
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {appDocs.length > 0 ? (
+                                <div className="space-y-1">
+                                  {appDocs.slice(0, 3).map((doc: any, index: number) => (
+                                    <div key={index} className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => handleDownloadSingleDocument(doc, payment._id)}>
+                                      <FileText className="h-3 w-3 text-blue-500" />
+                                      <span className="text-xs truncate max-w-[120px]" title={doc.name}>
+                                        {doc.name}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs px-1 py-0">
+                                        {doc.type}
+                                      </Badge>
+                                    </div>
+                                  ))}
+                                  {appDocs.length > 3 && (
+                                    <div className="text-xs text-gray-500">
+                                      +{appDocs.length - 3} more
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
-                              {paymentDocs.length > 3 && (
-                                <div className="text-xs text-gray-500">
-                                  +{paymentDocs.length - 3} more
+                              ) : (
+                                <div className="flex items-center gap-1 text-gray-500">
+                                  <FileText className="h-3 w-3" />
+                                  <span className="text-xs">No documents</span>
                                 </div>
                               )}
                             </div>
-                          ) : (
-                            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => handleDocumentRequest(payment._id, "Required Documents")}>
-                              Request Documents
-                            </Button>
-                          )
-                        })()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {payment.paymentDate
-                          ? new Date(payment.paymentDate).toLocaleDateString('en-US')
-                          : new Date(payment.createdAt).toLocaleDateString('en-US')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <a href={`/admin/payments/${payment._id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </a>
-                          </DropdownMenuItem>
-                          {payment.paymentStatus === 'pending_approval' && (
-                            <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, 'paid')}>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Confirm Payment
-                            </DropdownMenuItem>
-                          )}
-                          {payment.paymentStatus === 'pending_approval' && (
-                            <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, 'rejected')}>
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject Payment
-                            </DropdownMenuItem>
-                          )}
-                          {/* Admin can verify when marked paid but not verified/approved */}
-                          {payment.paymentStatus === 'paid' && !payment.verifiedAt && (
-                            <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, 'verified')}>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Verify Payment
-                            </DropdownMenuItem>
-                          )}
-                          {payment.paymentStatus === "pending" && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, "paid")}>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Mark as Paid
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, "failed")}>
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Mark as Failed
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Documents
-                          </DropdownMenuItem>
-                          <PDFViewer
-                            applicationId={payment.applicationId?._id || payment.applicationId}
-                            studentName={payment.studentName}
-                            trigger={
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <FileText className="h-4 w-4 mr-2" />
-                                Generate PDF
-                              </DropdownMenuItem>
-                            }
-                          />
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {payment.paymentDate
+                                ? new Date(payment.paymentDate).toLocaleDateString('en-US')
+                                : new Date(payment.createdAt).toLocaleDateString('en-US')}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleDownloadReceipt(payment._id)}>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download Receipt
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadDocuments(payment)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Download Documents
+                                </DropdownMenuItem>
+                                {payment.paymentStatus === 'pending_approval' && (
+                                  <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, 'paid')}>
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Confirm Payment
+                                  </DropdownMenuItem>
+                                )}
+                                {payment.paymentStatus === 'pending' && (
+                                  <DropdownMenuItem onClick={() => handleStatusUpdate(payment._id, 'paid')}>
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Mark as Paid
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
@@ -572,7 +662,6 @@ export function PaymentTable() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Payment Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

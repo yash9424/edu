@@ -127,6 +127,9 @@ export function PaymentStatusTable() {
   const [notes, setNotes] = useState("")
   const [updating, setUpdating] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false)
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -192,26 +195,83 @@ export function PaymentStatusTable() {
     try {
       setUpdating(true)
       
-      // Create updated payment object
-      const updatedPayment = {
-        ...selectedStudent,
-        paymentAmount: parseFloat(paymentAmount),
-        leadStatus,
-        notes
+      const response = await fetch('/api/agency/payments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          paymentId: selectedStudent._id,
+          paymentAmount: parseFloat(paymentAmount),
+          leadStatus,
+          notes
+        })
+      })
+      
+      if (response.ok) {
+        await fetchPayments()
+        setIsUpdateOpen(false)
+      } else {
+        console.error('Failed to update payment')
+        alert('Failed to update payment')
       }
-      
-      // Update local state immediately for better UX
-      setPaymentData(prev => prev.map(payment => 
-        payment._id === selectedStudent._id 
-          ? updatedPayment
-          : payment
-      ))
-      
-      setIsUpdateOpen(false)
     } catch (error) {
       console.error('Error updating payment:', error)
+      alert('Error updating payment')
     } finally {
       setUpdating(false)
+    }
+  }
+
+  const handleUploadReceipt = (student: any) => {
+    setSelectedStudent(student)
+    setIsReceiptOpen(true)
+  }
+
+  const handleReceiptUpload = async () => {
+    if (!selectedStudent || !receiptFile) return
+    
+    try {
+      setUploading(true)
+      
+      const formData = new FormData()
+      formData.append('receipt', receiptFile)
+      formData.append('paymentId', selectedStudent._id)
+      
+      console.log('Uploading receipt for payment ID:', selectedStudent._id)
+      
+      const response = await fetch('/api/agency/payments/receipt', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Receipt uploaded successfully:', result)
+        
+        // Update local state to show receipt immediately
+        setPaymentData(prev => prev.map(payment => 
+          payment._id === selectedStudent._id 
+            ? { ...payment, paymentReceipt: { filename: receiptFile.name } }
+            : payment
+        ))
+        
+        await fetchPayments()
+        setIsReceiptOpen(false)
+        setReceiptFile(null)
+        alert('Receipt uploaded successfully!')
+      } else {
+        const error = await response.json()
+        console.error('Upload failed:', error)
+        alert('Failed to upload receipt: ' + (error.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error uploading receipt:', error)
+      alert('Error uploading receipt')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -354,6 +414,10 @@ export function PaymentStatusTable() {
                             <Edit className="h-4 w-4 mr-2" />
                             Update Payment
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleUploadReceipt(student)}>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload Receipt
+                          </DropdownMenuItem>
                           {/* Add agency actions to mark success/failure */}
                           {student.paymentStatus === 'pending' && (
                             <>
@@ -367,17 +431,14 @@ export function PaymentStatusTable() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          <DropdownMenuItem asChild>
-                            <a href="#">
-                              <FileText className="h-4 w-4 mr-2" />
-                              View Documents
-                            </a>
+
+                          <DropdownMenuItem onClick={() => window.open(`tel:${student.phone}`, '_self')}>
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call Student
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <a href="#">
-                              <User className="h-4 w-4 mr-2" />
-                              Contact Student
-                            </a>
+                          <DropdownMenuItem onClick={() => window.open(`mailto:${student.email}`, '_self')}>
+                            <Mail className="h-4 w-4 mr-2" />
+                            Email Student
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -532,6 +593,42 @@ export function PaymentStatusTable() {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Receipt Dialog */}
+      <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Pay Receipt</DialogTitle>
+            <DialogDescription>
+              Upload payment receipt for {selectedStudent?.studentName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="receipt-file">Pay Receipt</Label>
+              <Input
+                id="receipt-file"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+              />
+              {receiptFile && (
+                <p className="text-xs text-green-600">✓ {receiptFile.name}</p>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReceiptOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReceiptUpload} disabled={uploading || !receiptFile}>
+              {uploading ? "Uploading..." : "Upload Receipt"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -410,19 +410,7 @@ export default function RoleManagementPage() {
                           required
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="commissionRate">Commission Rate (%)</Label>
-                        <Input
-                          id="commissionRate"
-                          type="number"
-                          value={formData.commissionRate}
-                          onChange={(e) => setFormData(prev => ({ ...prev, commissionRate: parseFloat(e.target.value) || 15 }))}
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          required
-                        />
-                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="status">Status</Label>
                         <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => setFormData(prev => ({ ...prev, status: value }))}>
@@ -528,19 +516,7 @@ export default function RoleManagementPage() {
                           required
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-commissionRate">Commission Rate (%)</Label>
-                        <Input
-                          id="edit-commissionRate"
-                          type="number"
-                          value={formData.commissionRate}
-                          onChange={(e) => setFormData(prev => ({ ...prev, commissionRate: parseFloat(e.target.value) || 15 }))}
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          required
-                        />
-                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="edit-status">Status</Label>
                         <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => setFormData(prev => ({ ...prev, status: value }))}>

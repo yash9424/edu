@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     const payments = await Payment.find(query)
       .populate('applicationId', 'applicationId')
       .sort({ createdAt: -1 })
+      .lean()
     
     // Calculate statistics
     const stats = {
@@ -54,6 +55,8 @@ export async function GET(request: NextRequest) {
       rejected: payments.filter(p => p.paymentStatus === 'rejected').length,
       totalCommission: payments.reduce((sum, p) => sum + (p.commissionAmount || 0), 0)
     }
+    
+    console.log('Returning payments with receipts:', payments.filter(p => p.paymentReceipt).length)
     
     return NextResponse.json({
       payments,

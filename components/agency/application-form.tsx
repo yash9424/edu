@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-import { User } from "lucide-react"
+import { User, Upload, FileText, X } from "lucide-react"
 // Types defined inline
 interface College {
   id: string
@@ -41,6 +41,15 @@ export function ApplicationForm() {
   const [courses, setCourses] = useState<Course[]>([])
   const [courseTypes, setCourseTypes] = useState<string[]>([])
   const [streams, setStreams] = useState<string[]>([])
+  const [documents, setDocuments] = useState({
+    passportPhoto: null as File | null,
+    aadharCard: null as File | null,
+    signature: null as File | null,
+    abcId: null as File | null,
+    debId: null as File | null,
+    feeReceipt: null as File | null,
+    otherDocuments: [] as File[]
+  })
   
   // Fetch colleges on component mount
   useEffect(() => {
@@ -234,31 +243,7 @@ export function ApplicationForm() {
     setError("")
 
     try {
-      // Create FormData for file uploads
-      const submitData = new FormData()
-
-      // Add form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        submitData.append(key, value as string)
-      })
-      
-      // Add academic records
-      submitData.append('academicRecords', JSON.stringify(academicRecords.map(record => ({
-        level: record.level,
-        boardUniversity: record.boardUniversity,
-        year: record.year,
-        obtainedMarks: record.obtainedMarks,
-        percentage: record.percentage
-      }))))
-
-
-      
-      // Add academic marksheets
-      academicRecords.forEach((record, index) => {
-        if (record.marksheet) {
-          submitData.append(`academicRecords.${index}.marksheet`, record.marksheet)
-        }
-      })
+      // Send as JSON instead of FormData to avoid file upload issues
 
       console.log('Submitting application data...')
       
@@ -290,8 +275,8 @@ export function ApplicationForm() {
         fatherName: formData.fatherName,
         motherName: formData.motherName,
         religion: formData.religion,
-        caste: formData.caste,
-        maritalStatus: formData.maritalStatus,
+        caste: formData.caste || undefined,
+        maritalStatus: formData.maritalStatus || undefined,
         academicRecords: academicRecords.map(record => ({
           level: record.level,
           board: record.boardUniversity,
@@ -378,7 +363,7 @@ export function ApplicationForm() {
 
 
   const nextTab = () => {
-    const tabs = ["personal", "academic", "course", "additional"]
+    const tabs = ["personal", "academic", "course", "documents", "additional"]
     const currentIndex = tabs.indexOf(currentTab)
     if (currentIndex < tabs.length - 1) {
       setCurrentTab(tabs[currentIndex + 1])
@@ -386,7 +371,7 @@ export function ApplicationForm() {
   }
 
   const prevTab = () => {
-    const tabs = ["personal", "academic", "course", "additional"]
+    const tabs = ["personal", "academic", "course", "documents", "additional"]
     const currentIndex = tabs.indexOf(currentTab)
     if (currentIndex > 0) {
       setCurrentTab(tabs[currentIndex - 1])
@@ -404,10 +389,11 @@ export function ApplicationForm() {
       <CardContent>
         <form onSubmit={handleSubmit}>
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="academic">Academic</TabsTrigger>
               <TabsTrigger value="course">Course</TabsTrigger>
+              <TabsTrigger value="documents">Documents</TabsTrigger>
               <TabsTrigger value="additional">Additional</TabsTrigger>
             </TabsList>
 
@@ -737,6 +723,149 @@ export function ApplicationForm() {
             </TabsContent>
 
 
+
+            <TabsContent value="documents" className="space-y-6 mt-6">
+              <div className="space-y-6">
+                <h3 className="text-base font-medium flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Documents
+                </h3>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Passport Size Photo *</Label>
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setDocuments(prev => ({ ...prev, passportPhoto: file }))
+                      }}
+                      className="w-full text-sm"
+                    />
+                    {documents.passportPhoto && (
+                      <p className="text-xs text-green-600">✓ {documents.passportPhoto.name}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Aadhar Card *</Label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setDocuments(prev => ({ ...prev, aadharCard: file }))
+                      }}
+                      className="w-full text-sm"
+                    />
+                    {documents.aadharCard && (
+                      <p className="text-xs text-green-600">✓ {documents.aadharCard.name}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Signature *</Label>
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setDocuments(prev => ({ ...prev, signature: file }))
+                      }}
+                      className="w-full text-sm"
+                    />
+                    {documents.signature && (
+                      <p className="text-xs text-green-600">✓ {documents.signature.name}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>ABC ID / APAAR ID</Label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setDocuments(prev => ({ ...prev, abcId: file }))
+                      }}
+                      className="w-full text-sm"
+                    />
+                    {documents.abcId && (
+                      <p className="text-xs text-green-600">✓ {documents.abcId.name}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>DEB ID</Label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setDocuments(prev => ({ ...prev, debId: file }))
+                      }}
+                      className="w-full text-sm"
+                    />
+                    {documents.debId && (
+                      <p className="text-xs text-green-600">✓ {documents.debId.name}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Fee Receipt</Label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setDocuments(prev => ({ ...prev, feeReceipt: file }))
+                      }}
+                      className="w-full text-sm"
+                    />
+                    {documents.feeReceipt && (
+                      <p className="text-xs text-green-600">✓ {documents.feeReceipt.name}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Any Other Documents</Label>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      setDocuments(prev => ({ ...prev, otherDocuments: [...prev.otherDocuments, ...files] }))
+                    }}
+                    className="w-full text-sm"
+                  />
+                  {documents.otherDocuments.length > 0 && (
+                    <div className="space-y-1">
+                      {documents.otherDocuments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between text-xs">
+                          <span className="text-green-600">✓ {file.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setDocuments(prev => ({
+                                ...prev,
+                                otherDocuments: prev.otherDocuments.filter((_, i) => i !== index)
+                              }))
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="additional" className="space-y-6 mt-6">
               <div className="space-y-4">
