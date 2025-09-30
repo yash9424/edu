@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
     const stats = {
       total: payments.length,
       pending: payments.filter(p => p.paymentStatus === 'pending').length,
+      pending_approval: payments.filter(p => p.paymentStatus === 'pending_approval').length,
       paid: payments.filter(p => p.paymentStatus === 'paid').length,
       verified: payments.filter(p => p.paymentStatus === 'verified').length,
       approved: payments.filter(p => p.paymentStatus === 'approved').length,
@@ -56,10 +57,24 @@ export async function GET(request: NextRequest) {
       totalCommission: payments.reduce((sum, p) => sum + (p.commissionAmount || 0), 0)
     }
     
-    console.log('Returning payments with receipts:', payments.filter(p => p.paymentReceipt).length)
+    console.log('Returning payments with receipts:', payments.filter(p => p.paymentReceipt?.filename).length)
+    console.log('Payment statuses:', payments.map(p => ({ id: p._id, status: p.paymentStatus, hasReceipt: !!p.paymentReceipt?.filename })))
+    
+    // Ensure receipt information is properly formatted
+    const formattedPayments = payments.map(payment => ({
+      ...payment,
+      paymentReceipt: payment.paymentReceipt ? {
+        filename: payment.paymentReceipt.filename,
+        size: payment.paymentReceipt.size,
+        mimeType: payment.paymentReceipt.mimeType,
+        uploadedAt: payment.paymentReceipt.uploadedAt,
+        uploadedBy: payment.paymentReceipt.uploadedBy,
+        data: payment.paymentReceipt.data // Include data for download
+      } : null
+    }))
     
     return NextResponse.json({
-      payments,
+      payments: formattedPayments,
       stats
     })
   } catch (error) {

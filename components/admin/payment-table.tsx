@@ -272,10 +272,11 @@ export function PaymentTable() {
 
   const handleDownloadReceipt = async (paymentId: string) => {
     try {
-      const payment = payments.find(p => p._id === paymentId)
+      const payment = payments.find((p: any) => p._id === paymentId)
       
-      if (payment?.paymentReceipt) {
-        if (payment.paymentReceipt.data) {
+      // Try to download from local payment data first
+      if (payment?.paymentReceipt?.data) {
+        try {
           const byteCharacters = atob(payment.paymentReceipt.data)
           const byteNumbers = new Array(byteCharacters.length)
           for (let i = 0; i < byteCharacters.length; i++) {
@@ -293,40 +294,50 @@ export function PaymentTable() {
           document.body.removeChild(a)
           URL.revokeObjectURL(url)
           return
+        } catch (decodeError) {
+          console.warn('Failed to decode local receipt data, trying API:', decodeError)
         }
       }
       
+      // Fallback to API call
       const response = await fetch(`/api/admin/payments/receipt/${paymentId}`, {
         credentials: 'include'
       })
+      
       if (response.ok) {
         const data = await response.json()
         if (data.receipt?.data) {
-          const byteCharacters = atob(data.receipt.data)
-          const byteNumbers = new Array(byteCharacters.length)
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          try {
+            const byteCharacters = atob(data.receipt.data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: data.receipt.mimeType || 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = data.receipt.filename || 'receipt.pdf'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          } catch (decodeError) {
+            console.error('Failed to decode receipt data from API:', decodeError)
+            alert('Error decoding receipt file')
           }
-          const byteArray = new Uint8Array(byteNumbers)
-          const blob = new Blob([byteArray], { type: data.receipt.mimeType || 'application/pdf' })
-          
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = data.receipt.filename || 'receipt.pdf'
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(url)
         } else {
-          alert('No receipt available for this payment')
+          alert('No receipt data available for this payment')
         }
       } else {
-        alert('No receipt available for this payment')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        alert(`Failed to download receipt: ${errorData.error || 'Server error'}`)
       }
     } catch (error) {
       console.error('Error downloading receipt:', error)
-      alert('Error downloading receipt')
+      alert('Error downloading receipt. Please try again.')
     }
   }
 
@@ -495,7 +506,7 @@ export function PaymentTable() {
                                 {getStatusIcon(payment.paymentStatus)}
                                 {payment.paymentStatus}
                               </Badge>
-                              {payment.paymentReceipt && (
+                              {payment.paymentReceipt?.filename && (
                                 <Badge variant="secondary" className="gap-1">
                                   <FileText className="h-3 w-3" />
                                   Receipt Available

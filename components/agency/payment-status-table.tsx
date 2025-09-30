@@ -254,16 +254,24 @@ export function PaymentStatusTable() {
         // Update local state to show receipt immediately
         setPaymentData(prev => prev.map(payment => 
           payment._id === selectedStudent._id 
-            ? { ...payment, paymentReceipt: { filename: receiptFile.name } }
+            ? { 
+                ...payment, 
+                paymentReceipt: { 
+                  filename: receiptFile.name,
+                  uploadedAt: new Date().toISOString()
+                },
+                paymentStatus: 'pending_approval'
+              }
             : payment
         ))
         
+        // Refresh data from server
         await fetchPayments()
         setIsReceiptOpen(false)
         setReceiptFile(null)
-        alert('Receipt uploaded successfully!')
+        alert('Receipt uploaded successfully! Payment status updated to pending approval.')
       } else {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Upload failed:', error)
         alert('Failed to upload receipt: ' + (error.error || 'Unknown error'))
       }
@@ -363,10 +371,18 @@ export function PaymentStatusTable() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getPaymentStatusConfig(student.paymentStatus).variant} className="flex items-center gap-1 w-fit">
-                        {React.createElement(getPaymentStatusConfig(student.paymentStatus).icon, { className: "h-3 w-3" })}
-                        <span>{getPaymentStatusConfig(student.paymentStatus).label}</span>
-                      </Badge>
+                      <div className="space-y-1">
+                        <Badge variant={getPaymentStatusConfig(student.paymentStatus).variant} className="flex items-center gap-1 w-fit">
+                          {React.createElement(getPaymentStatusConfig(student.paymentStatus).icon, { className: "h-3 w-3" })}
+                          <span>{getPaymentStatusConfig(student.paymentStatus).label}</span>
+                        </Badge>
+                        {student.paymentReceipt?.filename && (
+                          <Badge variant="outline" className="flex items-center gap-1 w-fit text-xs">
+                            <FileText className="h-3 w-3" />
+                            Receipt Uploaded
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={leadConfig.variant}>{leadConfig.label}</Badge>
@@ -418,6 +434,14 @@ export function PaymentStatusTable() {
                             <Upload className="h-4 w-4 mr-2" />
                             Upload Receipt
                           </DropdownMenuItem>
+                          {/* Show receipt status */}
+                          {student.paymentReceipt?.filename && (
+                            <DropdownMenuItem disabled>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Receipt: {student.paymentReceipt.filename}
+                            </DropdownMenuItem>
+                          )}
+                          
                           {/* Add agency actions to mark success/failure */}
                           {student.paymentStatus === 'pending' && (
                             <>
