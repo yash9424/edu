@@ -43,6 +43,129 @@ const getStatusColor = (status: string) => {
   }
 }
 
+function DocumentsDownloadDialog({ application, documents, onClose }: { application: Application, documents: any[], onClose: () => void }) {
+  const appId = application.applicationId || application._id || application.id
+  const filteredDocs = documents.filter(doc => {
+    const docAppId = doc.applicationId
+    return docAppId === appId || docAppId === String(appId)
+  })
+  
+  // Separate academic and other documents
+  const academicDocs = filteredDocs.filter(doc => doc.type?.includes('Marksheet')).slice(0, 4)
+  const otherDocs = filteredDocs.filter(doc => !doc.type?.includes('Marksheet'))
+    .filter((doc, index, self) => index === self.findIndex(d => d.type === doc.type))
+    .slice(0, 7)
+  
+  const appDocs = [...academicDocs, ...otherDocs]
+
+  const downloadDocument = async (doc: any) => {
+    try {
+      if (doc.fileData) {
+        let blob: Blob
+        
+        if (doc.fileData.startsWith('data:')) {
+          const response = await fetch(doc.fileData)
+          blob = await response.blob()
+        } else {
+          const base64Data = doc.fileData.split(',')[1] || doc.fileData
+          const byteCharacters = atob(base64Data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          blob = new Blob([byteArray], { type: 'application/pdf' })
+        }
+        
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = doc.name || `document_${doc.type}.pdf`
+        link.click()
+        URL.revokeObjectURL(url)
+        toast.success(`Downloaded ${doc.name}`)
+      } else {
+        const response = await fetch(`/api/admin/documents/${doc.id}`, {
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const docData = await response.json()
+          if (docData.fileData) {
+            const base64Data = docData.fileData.split(',')[1] || docData.fileData
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = doc.name || `document_${doc.type}.pdf`
+            link.click()
+            URL.revokeObjectURL(url)
+            toast.success(`Downloaded ${doc.name}`)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error)
+      toast.error(`Failed to download ${doc.name}`)
+    }
+  }
+
+  return (
+    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Documents - {application.studentName}</DialogTitle>
+        <DialogDescription>
+          Download individual documents for this application
+        </DialogDescription>
+      </DialogHeader>
+      
+      <div className="py-4">
+        {appDocs.length > 0 ? (
+          <div className="space-y-3">
+            {appDocs.map((doc: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <div className="font-medium">{doc.name}</div>
+                    <div className="text-sm text-gray-500">
+                      Type: {doc.type} • Size: {doc.size ? `${Math.round(doc.size / 1024)}KB` : 'Unknown'}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadDocument(doc)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No documents available for this application</p>
+          </div>
+        )}
+      </div>
+      
+      <DialogFooter>
+        <Button onClick={onClose}>Close</Button>
+      </DialogFooter>
+    </DialogContent>
+  )
+}
+
 function ViewApplicationDialog({ application, onClose }: { application: Application, onClose: () => void }) {
   return (
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -170,6 +293,18 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
     status: application.status,
     abcId: application.abcId || '',
     debId: application.debId || '',
+    applicationId: application.applicationId || '',
+    aadharPassportNumber: application.studentDetails?.aadharPassportNumber || '',
+    fatherName: application.studentDetails?.fatherName || '',
+    motherName: application.studentDetails?.motherName || '',
+    religion: application.studentDetails?.religion || '',
+    caste: application.studentDetails?.caste || '',
+    maritalStatus: application.studentDetails?.maritalStatus || '',
+    dateOfBirth: application.studentDetails?.dateOfBirth || '',
+    nationality: application.studentDetails?.nationality || '',
+    address: application.studentDetails?.address || '',
+    personalStatement: application.studentDetails?.personalStatement || '',
+    workExperience: application.studentDetails?.workExperience || '',
     studentDetails: {
       dateOfBirth: application.studentDetails?.dateOfBirth || '',
       nationality: application.studentDetails?.nationality || '',
@@ -189,16 +324,13 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
   const [isLoading, setIsLoading] = useState(false)
 
   const documentTypes = [
-    'Updated Transcript',
-    'IELTS Certificate',
-    'TOEFL Certificate',
-    'Passport Copy',
-    'Recommendation Letter',
-    'Statement of Purpose',
-    'Financial Documents',
-    'Medical Certificate',
-    'Police Clearance',
-    'Other'
+    'Passport Size Photo',
+    'Aadhaar Card',
+    'Signature',
+    'ABC ID / APAAR ID',
+    'DEB ID',
+    'Fee Receipt',
+    'Any Other Documents'
   ]
 
   const handleSave = async () => {
@@ -214,10 +346,24 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
           email: formData.email,
           phone: formData.phone,
           status: formData.status,
-          studentDetails: formData.studentDetails,
+          studentDetails: {
+            ...formData.studentDetails,
+            fatherName: formData.fatherName,
+            motherName: formData.motherName,
+            religion: formData.religion,
+            caste: formData.caste,
+            maritalStatus: formData.maritalStatus,
+            aadharPassportNumber: formData.aadharPassportNumber,
+            dateOfBirth: formData.dateOfBirth,
+            nationality: formData.nationality,
+            address: formData.address,
+            personalStatement: formData.personalStatement,
+            workExperience: formData.workExperience
+          },
           pendingDocuments: pendingDocuments,
           abcId: formData.abcId,
           debId: formData.debId,
+          applicationId: formData.applicationId,
           academicRecords: formData.academicRecords
         })
       })
@@ -250,7 +396,7 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
   }
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="w-[95vw] max-w-6xl max-h-[95vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Edit Application - {application.studentName}</DialogTitle>
         <DialogDescription>
@@ -262,7 +408,16 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
         {/* Basic Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Basic Information</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="applicationId">Application ID</Label>
+              <Input
+                id="applicationId"
+                value={formData.applicationId}
+                onChange={(e) => setFormData(prev => ({ ...prev, applicationId: e.target.value }))}
+                placeholder="Auto-generated if left empty"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="studentName">Student Name</Label>
               <Input
@@ -289,6 +444,71 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="aadharPassportNumber">Aadhar/Passport Number</Label>
+              <Input
+                id="aadharPassportNumber"
+                value={formData.aadharPassportNumber}
+                onChange={(e) => setFormData(prev => ({ ...prev, aadharPassportNumber: e.target.value }))}
+                placeholder="Enter Aadhar or Passport number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fatherName">Father's Name</Label>
+              <Input
+                id="fatherName"
+                value={formData.fatherName}
+                onChange={(e) => setFormData(prev => ({ ...prev, fatherName: e.target.value }))}
+                placeholder="Enter father's name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="motherName">Mother's Name</Label>
+              <Input
+                id="motherName"
+                value={formData.motherName}
+                onChange={(e) => setFormData(prev => ({ ...prev, motherName: e.target.value }))}
+                placeholder="Enter mother's name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="religion">Religion</Label>
+              <Input
+                id="religion"
+                value={formData.religion}
+                onChange={(e) => setFormData(prev => ({ ...prev, religion: e.target.value }))}
+                placeholder="Enter religion"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="caste">Caste Category</Label>
+              <Select value={formData.caste} onValueChange={(value) => setFormData(prev => ({ ...prev, caste: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select caste category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="General">General</SelectItem>
+                  <SelectItem value="SC">SC</SelectItem>
+                  <SelectItem value="ST">ST</SelectItem>
+                  <SelectItem value="OBC">OBC</SelectItem>
+                  <SelectItem value="EWS">EWS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maritalStatus">Marital Status</Label>
+              <Select value={formData.maritalStatus} onValueChange={(value) => setFormData(prev => ({ ...prev, maritalStatus: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select marital status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Single">Single</SelectItem>
+                  <SelectItem value="Married">Married</SelectItem>
+                  <SelectItem value="Divorced">Divorced</SelectItem>
+                  <SelectItem value="Widowed">Widowed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
                 <SelectTrigger>
@@ -308,15 +528,16 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
         {/* Student Details */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Student Details</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <Input
                 id="dateOfBirth"
                 type="date"
-                value={formData.studentDetails.dateOfBirth}
+                value={formData.dateOfBirth}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
+                  dateOfBirth: e.target.value,
                   studentDetails: { ...prev.studentDetails, dateOfBirth: e.target.value }
                 }))}
               />
@@ -325,9 +546,10 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
               <Label htmlFor="nationality">Nationality</Label>
               <Input
                 id="nationality"
-                value={formData.studentDetails.nationality}
+                value={formData.nationality}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
+                  nationality: e.target.value,
                   studentDetails: { ...prev.studentDetails, nationality: e.target.value }
                 }))}
               />
@@ -354,24 +576,15 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
                 }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="applicationId">Application ID</Label>
-              <Input
-                id="applicationId"
-                value={application.applicationId || ''}
-                readOnly
-                className="bg-gray-100"
-                placeholder="Auto-generated"
-              />
-            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="address">Address</Label>
             <Textarea
               id="address"
-              value={formData.studentDetails.address}
+              value={formData.address}
               onChange={(e) => setFormData(prev => ({
                 ...prev,
+                address: e.target.value,
                 studentDetails: { ...prev.studentDetails, address: e.target.value }
               }))}
             />
@@ -448,6 +661,41 @@ function EditApplicationDialog({ application, onSave, onClose }: EditApplication
           </div>
         </div>
 
+        {/* Additional Information */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Additional Information</h3>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="personalStatement">Personal Statement</Label>
+              <Textarea
+                id="personalStatement"
+                value={formData.personalStatement}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  personalStatement: e.target.value,
+                  studentDetails: { ...prev.studentDetails, personalStatement: e.target.value }
+                }))}
+                placeholder="Tell us about yourself and why you want to study this course..."
+                rows={4}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="workExperience">Work Experience</Label>
+              <Textarea
+                id="workExperience"
+                value={formData.workExperience}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  workExperience: e.target.value,
+                  studentDetails: { ...prev.studentDetails, workExperience: e.target.value }
+                }))}
+                placeholder="Describe any relevant work experience..."
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Document Requests */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Document Requests</h3>
@@ -513,6 +761,7 @@ export function ApplicationsTable() {
   const [agencyFilter, setAgencyFilter] = useState('all')
   const [editingApplication, setEditingApplication] = useState<Application | null>(null)
   const [viewingApplication, setViewingApplication] = useState<Application | null>(null)
+  const [documentsDialogApplication, setDocumentsDialogApplication] = useState<Application | null>(null)
 
   useEffect(() => {
     fetchApplications()
@@ -573,7 +822,7 @@ export function ApplicationsTable() {
     setEditingApplication(null)
   }
 
-  const updateApplicationStatus = async (applicationId: string, status: string) => {
+  const updateApplicationStatus = async (applicationId: string, status: "pending" | "approved" | "rejected" | "processing") => {
     try {
       const response = await fetch(`/api/admin/applications/${applicationId}`, {
         method: 'PUT',
@@ -600,10 +849,18 @@ export function ApplicationsTable() {
     console.log('All documents:', documents)
     
     const appId = application.applicationId || application._id || application.id
-    const appDocs = documents.filter(doc => {
-      console.log('Checking doc:', doc.applicationId, 'against:', appId)
-      return doc.applicationId === appId
+    const filteredDocs = documents.filter(doc => {
+      const docAppId = doc.applicationId
+      console.log('Checking doc:', docAppId, 'against:', appId)
+      return docAppId === appId || docAppId === String(appId)
     })
+    
+    // Separate academic and other documents
+    const academicDocs = filteredDocs.filter(doc => doc.type?.includes('Marksheet')).slice(0, 4)
+    const otherDocs = filteredDocs.filter(doc => !doc.type?.includes('Marksheet'))
+      .filter((doc, index, self) => index === self.findIndex(d => d.type === doc.type))
+      .slice(0, 7)
+    const appDocs = [...academicDocs, ...otherDocs]
     
     console.log('Filtered documents:', appDocs)
     
@@ -818,7 +1075,17 @@ export function ApplicationsTable() {
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         {(() => {
-                          const appDocs = documents.filter(doc => doc.applicationId === (application.applicationId || application._id || application.id))
+                          const currentAppId = application.applicationId || application._id || application.id
+                          const filteredDocs = documents.filter(doc => {
+                            const docAppId = doc.applicationId
+                            return docAppId === currentAppId || docAppId === String(currentAppId)
+                          })
+                          // Separate academic and other documents
+                          const academicDocs = filteredDocs.filter(doc => doc.type?.includes('Marksheet')).slice(0, 4)
+                          const otherDocs = filteredDocs.filter(doc => !doc.type?.includes('Marksheet'))
+                            .filter((doc, index, self) => index === self.findIndex(d => d.type === doc.type))
+                            .slice(0, 7)
+                          const appDocs = [...academicDocs, ...otherDocs]
                           return appDocs.length > 0 ? (
                             <div className="space-y-1">
                               {appDocs.slice(0, 3).map((doc: any, index: number) => (
@@ -886,7 +1153,7 @@ export function ApplicationsTable() {
                               <Eye className="h-4 w-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownloadDocuments(application)}>
+                            <DropdownMenuItem onClick={() => setDocumentsDialogApplication(application)}>
                               <Download className="h-4 w-4 mr-2" />
                               Download Documents
                             </DropdownMenuItem>
@@ -934,6 +1201,17 @@ export function ApplicationsTable() {
             application={editingApplication}
             onSave={handleApplicationUpdate}
             onClose={() => setEditingApplication(null)}
+          />
+        </Dialog>
+      )}
+
+      {/* Documents Download Dialog */}
+      {documentsDialogApplication && (
+        <Dialog open={!!documentsDialogApplication} onOpenChange={() => setDocumentsDialogApplication(null)}>
+          <DocumentsDownloadDialog
+            application={documentsDialogApplication}
+            documents={documents}
+            onClose={() => setDocumentsDialogApplication(null)}
           />
         </Dialog>
       )}

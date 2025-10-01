@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, Download, Trash2, Upload, File, Edit } from "lucide-react"
+import { Eye, Download, Trash2, Upload, File, Edit, FileText, Plus, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface Document {
@@ -29,6 +30,16 @@ interface Application {
   status: string
 }
 
+interface RequestedDocument {
+  _id: string
+  applicationId: string
+  studentName: string
+  collegeName: string
+  courseName: string
+  pendingDocuments: string[]
+  status: string
+}
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case "approved":
@@ -46,6 +57,7 @@ export function DocumentManager() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [editingDocument, setEditingDocument] = useState<Document | null>(null)
   const [uploadForm, setUploadForm] = useState({
@@ -54,12 +66,14 @@ export function DocumentManager() {
     applicationId: '',
     file: null as File | null
   })
+  const [requestedDocsForApp, setRequestedDocsForApp] = useState<string[]>([])
   const [viewingDocument, setViewingDocument] = useState<Document | null>(null)
+  const [requestedDocuments, setRequestedDocuments] = useState<RequestedDocument[]>([])
+  const [showRequestedDocs, setShowRequestedDocs] = useState(false)
 
   useEffect(() => {
     fetchDocuments()
     fetchApplications()
-    // Auto-refresh every 2 seconds
     const interval = setInterval(fetchDocuments, 2000)
     return () => clearInterval(interval)
   }, [])
@@ -94,32 +108,33 @@ export function DocumentManager() {
     }
   }
 
+  const fetchRequestedDocuments = async () => {
+    try {
+      const response = await fetch('/api/agency/requested-documents', {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setRequestedDocuments(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch requested documents:', error)
+    }
+  }
+
   const handleUpload = async () => {
-    if (!uploadForm.file) {
-      alert('Please select a file')
-      return
-    }
-    if (!uploadForm.type) {
-      alert('Please select document type')
-      return
-    }
-    if (!uploadForm.applicationId) {
-      alert('Please enter Application ID')
+    if (!uploadForm.file || !uploadForm.type || !uploadForm.applicationId) {
+      alert('Please fill all fields')
       return
     }
 
+    setUploading(true)
     try {
-      // Convert file to base64
       const fileData = await new Promise<string>((resolve) => {
         const reader = new FileReader()
-        reader.onload = () => {
-          console.log('File converted to base64, length:', (reader.result as string).length)
-          resolve(reader.result as string)
-        }
+        reader.onload = () => resolve(reader.result as string)
         reader.readAsDataURL(uploadForm.file!)
       })
-      
-      console.log('Uploading file with data length:', fileData.length)
 
       const response = await fetch('/api/agency/documents', {
         method: 'POST',
@@ -135,23 +150,23 @@ export function DocumentManager() {
       })
 
       if (response.ok) {
-        const result = await response.json()
-        console.log('Upload response:', result)
         await fetchDocuments()
         setShowUpload(false)
         setUploadForm({ name: '', type: '', applicationId: '', file: null })
-        alert('Document uploaded successfully!')
-      } else {
-        const error = await response.text()
-        console.error('Upload failed:', error)
+        setRequestedDocsForApp([])
+        toast.success('Document uploaded successfully!')
+        fetchRequestedDocuments()
+        setShowRequestedDocs(true)
       }
     } catch (error) {
       alert('Failed to upload document')
+    } finally {
+      setUploading(false)
     }
   }
 
   const handleDelete = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return
+    if (!confirm('Are you sure?')) return
     
     try {
       const response = await fetch(`/api/agency/documents/${documentId}`, {
@@ -168,40 +183,28 @@ export function DocumentManager() {
     }
   }
 
-  const handleEdit = async () => {
-    if (!editingDocument) return
-    
-    try {
-      const response = await fetch(`/api/agency/documents/${editingDocument.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          type: editingDocument.type,
-          applicationId: editingDocument.applicationId
-        })
-      })
-      
-      if (response.ok) {
-        await fetchDocuments()
-        setEditingDocument(null)
-        alert('Document updated successfully!')
-      }
-    } catch (error) {
-      alert('Failed to update document')
-    }
-  }
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Document Management</CardTitle>
-            <Button onClick={() => setShowUpload(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Documents
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => {
+                fetchRequestedDocuments()
+                setShowRequestedDocs(true)
+              }}>
+                <FileText className="h-4 w-4 mr-2" />
+                Requested Documents
+              </Button>
+              <Button onClick={() => {
+                setRequestedDocsForApp([])
+                setShowUpload(true)
+              }}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Documents
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -214,7 +217,7 @@ export function DocumentManager() {
                 <TableHead>Application ID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Uploaded</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -251,17 +254,6 @@ export function DocumentManager() {
                         <Button variant="ghost" size="sm" onClick={() => setViewingDocument(doc)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = `data:text/plain;charset=utf-8,Document: ${doc.name}`
-                          link.download = doc.name
-                          link.click()
-                        }}>
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setEditingDocument(doc)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -275,32 +267,46 @@ export function DocumentManager() {
         </CardContent>
       </Card>
 
-      {showUpload && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload New Document</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
+      <Dialog open={showUpload} onOpenChange={() => {
+        if (!uploading) {
+          setShowUpload(false)
+          setRequestedDocsForApp([])
+        }
+      }}>
+        <DialogContent className="w-[95vw] max-w-2xl mx-auto">
+          <DialogHeader>
+            <DialogTitle>Upload New Document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label>Document Type</Label>
-                <Select value={uploadForm.type} onValueChange={(value) => setUploadForm(prev => ({ ...prev, type: value }))}>
+                <Select disabled={uploading} value={uploadForm.type} onValueChange={(value) => setUploadForm(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="aadhar">Aadhar Card</SelectItem>
-                    <SelectItem value="passport">Passport</SelectItem>
-                    <SelectItem value="transcript">Transcript</SelectItem>
-                    <SelectItem value="certificate">Certificate</SelectItem>
-                    <SelectItem value="photo">Photo</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {requestedDocsForApp.length > 0 ? (
+                      requestedDocsForApp.map((doc) => (
+                        <SelectItem key={doc} value={doc}>{doc}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Passport Size Photo">Passport Size Photo</SelectItem>
+                        <SelectItem value="Aadhaar Card">Aadhaar Card</SelectItem>
+                        <SelectItem value="Signature">Signature</SelectItem>
+                        <SelectItem value="ABC ID / APAAR ID">ABC ID / APAAR ID</SelectItem>
+                        <SelectItem value="DEB ID">DEB ID</SelectItem>
+                        <SelectItem value="Fee Receipt">Fee Receipt</SelectItem>
+                        <SelectItem value="Any Other Documents">Any Other Documents</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Application ID</Label>
-                <Select value={uploadForm.applicationId} onValueChange={(value) => setUploadForm(prev => ({ ...prev, applicationId: value }))}>
+                <Select disabled={uploading} value={uploadForm.applicationId} onValueChange={(value) => setUploadForm(prev => ({ ...prev, applicationId: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Application" />
                   </SelectTrigger>
@@ -314,132 +320,115 @@ export function DocumentManager() {
                 </Select>
               </div>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>Select File</Label>
               <Input
+                disabled={uploading}
                 type="file"
                 onChange={(e) => setUploadForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
               />
             </div>
-            <div className="flex gap-3">
-              <Button onClick={handleUpload}>
-                Upload Document
-              </Button>
-              <Button variant="outline" onClick={() => setShowUpload(false)}>
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+              <Button 
+                variant="outline" 
+                disabled={uploading}
+                onClick={() => {
+                  setShowUpload(false)
+                  setRequestedDocsForApp([])
+                }}
+              >
                 Cancel
               </Button>
+              <Button 
+                onClick={handleUpload} 
+                disabled={uploading}
+                className="min-w-[140px]"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Document
+                  </>
+                )}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
       
-      {/* View Document Dialog */}
-      {viewingDocument && (
-        <Dialog open={!!viewingDocument} onOpenChange={() => setViewingDocument(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Document Details</DialogTitle>
+      {showRequestedDocs && (
+        <Dialog open={showRequestedDocs} onOpenChange={() => setShowRequestedDocs(false)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Requested Documents by Admin</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="font-semibold">Document Name</Label>
-                  <p>{viewingDocument.name}</p>
+            <div className="flex-1 overflow-auto p-2">
+              {requestedDocuments.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No document requests found</p>
+              ) : (
+                <div className="space-y-4">
+                  {requestedDocuments.map((req) => (
+                    <Card key={req._id} className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Application ID</Label>
+                          <p className="font-mono text-sm">{req.applicationId}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Student Name</Label>
+                          <p className="font-medium">{req.studentName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">College</Label>
+                          <p className="text-sm">{req.collegeName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Course</Label>
+                          <p className="text-sm">{req.courseName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Status</Label>
+                          <Badge variant={getStatusColor(req.status)} className="text-xs">{req.status}</Badge>
+                        </div>
+                        <div className="md:col-span-1">
+                          <Label className="text-xs text-muted-foreground">Requested Documents</Label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {req.pendingDocuments.map((doc, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {doc}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t">
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            setUploadForm(prev => ({ 
+                              ...prev, 
+                              applicationId: req.applicationId,
+                              type: req.pendingDocuments[0] || ''
+                            }))
+                            setRequestedDocsForApp(req.pendingDocuments)
+                            setShowUpload(true)
+                            setShowRequestedDocs(false)
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Upload Documents
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-                <div>
-                  <Label className="font-semibold">Type</Label>
-                  <p className="capitalize">{viewingDocument.type}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold">Size</Label>
-                  <p>{viewingDocument.size} MB</p>
-                </div>
-                <div>
-                  <Label className="font-semibold">Application ID</Label>
-                  <p className="font-mono">{viewingDocument.applicationId}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold">Status</Label>
-                  <Badge variant={getStatusColor(viewingDocument.status)}>{viewingDocument.status}</Badge>
-                </div>
-                <div>
-                  <Label className="font-semibold">Uploaded Date</Label>
-                  <p>{new Date(viewingDocument.uploadedAt).toLocaleDateString()}</p>
-                </div>
-              </div>
-              
-              {/* Document Preview */}
-              <div className="mt-6">
-                <Label className="font-semibold">Document Preview</Label>
-                <div className="mt-2 p-4 border rounded-lg bg-gray-50 min-h-[300px] flex items-center justify-center">
-                  {viewingDocument.fileData && viewingDocument.fileData.startsWith('data:') ? (
-                    <img 
-                      src={viewingDocument.fileData} 
-                      alt={viewingDocument.name}
-                      className="max-w-full max-h-[250px] object-contain"
-                    />
-                  ) : (
-                    <div className="text-center text-gray-500">
-                      <File className="h-16 w-16 mx-auto mb-2" />
-                      <p>Upload a new document to see preview</p>
-                      <p className="text-xs mt-2">Current document may not have preview data</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Edit Document Dialog */}
-      {editingDocument && (
-        <Dialog open={!!editingDocument} onOpenChange={() => setEditingDocument(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Document</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Document Type</Label>
-                <Select value={editingDocument.type} onValueChange={(value) => setEditingDocument(prev => prev ? { ...prev, type: value } : null)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aadhar">Aadhar Card</SelectItem>
-                    <SelectItem value="passport">Passport</SelectItem>
-                    <SelectItem value="transcript">Transcript</SelectItem>
-                    <SelectItem value="certificate">Certificate</SelectItem>
-                    <SelectItem value="photo">Photo</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Application ID</Label>
-                <Select value={editingDocument.applicationId} onValueChange={(value) => setEditingDocument(prev => prev ? { ...prev, applicationId: value } : null)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {applications.map((app) => (
-                      <SelectItem key={app.id} value={app.applicationId}>
-                        {app.applicationId} - {app.studentName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-3">
-                <Button onClick={handleEdit}>
-                  Update Document
-                </Button>
-                <Button variant="outline" onClick={() => setEditingDocument(null)}>
-                  Cancel
-                </Button>
-              </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

@@ -82,7 +82,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      id: newApplication._id
+      id: newApplication._id,
+      applicationId: applicationId,
+      application: {
+        _id: newApplication._id,
+        applicationId: applicationId
+      }
     })
   } catch (error) {
     console.error('Error creating application:', error)

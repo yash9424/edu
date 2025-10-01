@@ -49,6 +49,8 @@ export interface Course {
 
 export interface Application {
   id: string
+  _id?: string
+  applicationId?: string
   studentName: string
   email: string
   phone: string
@@ -84,6 +86,12 @@ export interface Application {
     previousEducation?: string
     gpa?: string
     englishProficiency?: string
+    fatherName?: string
+    motherName?: string
+    religion?: string
+    caste?: string
+    maritalStatus?: string
+    aadharPassportNumber?: string
   }
   pdfGenerated?: boolean
   lastUpdated?: string

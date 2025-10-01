@@ -239,6 +239,15 @@ export function ApplicationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    console.log('Form submission triggered from tab:', currentTab)
+    
+    // Only allow submission from additional tab
+    if (currentTab !== "additional") {
+      console.log('Preventing submission - not on additional tab')
+      return false
+    }
+    
     setLoading(true)
     setError("")
 
@@ -300,18 +309,21 @@ export function ApplicationForm() {
       console.log('Response status:', response.status)
       
       if (response.ok) {
-        try {
-          const result = await response.json()
-          console.log('Application created successfully:', result)
-          alert('Application submitted successfully!')
-          // Force refresh of applications list
-          window.location.href = "/agency/applications"
-        } catch (e) {
-          console.log('Success but no JSON response')
-          alert('Application submitted successfully!')
-          // Force refresh of applications list
-          window.location.href = "/agency/applications"
+        const result = await response.json()
+        console.log('Application created successfully:', result)
+        
+        // Upload documents if application was created successfully
+        const applicationId = result.applicationId || result.application?.applicationId || result.id
+        console.log('API Response:', result)
+        console.log('Using application ID for documents:', applicationId)
+        if (applicationId) {
+          await uploadDocuments(applicationId)
+        } else {
+          console.error('No application ID found in response:', result)
         }
+        
+        alert('Application submitted successfully!')
+        window.location.href = "/agency/applications"
       } else {
         try {
           const errorData = await response.json()
@@ -360,6 +372,79 @@ export function ApplicationForm() {
     })
   }
 
+  const uploadDocuments = async (applicationId: string) => {
+    console.log('Starting document upload for application:', applicationId)
+    
+    const documentTypes = [
+      { key: 'passportPhoto', type: 'Passport Size Photo' },
+      { key: 'aadharCard', type: 'Aadhaar Card' },
+      { key: 'signature', type: 'Signature' },
+      { key: 'abcId', type: 'ABC ID / APAAR ID' },
+      { key: 'debId', type: 'DEB ID' },
+      { key: 'feeReceipt', type: 'Fee Receipt' }
+    ]
+
+    // Upload individual documents
+    for (const docType of documentTypes) {
+      const file = documents[docType.key as keyof typeof documents] as File | null
+      if (file) {
+        console.log('Uploading document:', docType.type, file.name)
+        await uploadSingleDocument(file, docType.type, applicationId)
+      }
+    }
+
+    // Upload other documents
+    for (const file of documents.otherDocuments) {
+      console.log('Uploading other document:', file.name)
+      await uploadSingleDocument(file, 'Any Other Documents', applicationId)
+    }
+    
+    // Upload academic record marksheets
+    for (let i = 0; i < academicRecords.length; i++) {
+      const record = academicRecords[i]
+      if (record.marksheet) {
+        console.log('Uploading marksheet for:', record.level, record.marksheet.name)
+        await uploadSingleDocument(record.marksheet, `${record.level} Marksheet`, applicationId)
+      }
+    }
+    
+    console.log('Document upload completed')
+  }
+
+  const uploadSingleDocument = async (file: File, type: string, applicationId: string) => {
+    try {
+      console.log('Processing file:', file.name, 'Type:', type, 'Size:', file.size)
+      
+      const fileData = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.readAsDataURL(file)
+      })
+
+      const response = await fetch('/api/agency/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: file.name,
+          type: type,
+          size: Math.round(file.size / 1024 / 1024 * 100) / 100,
+          applicationId: applicationId,
+          fileData: fileData
+        })
+      })
+      
+      if (response.ok) {
+        console.log('Document uploaded successfully:', file.name)
+      } else {
+        const error = await response.json()
+        console.error('Document upload failed:', error)
+      }
+    } catch (error) {
+      console.error('Error uploading document:', file.name, error)
+    }
+  }
+
 
 
   const nextTab = () => {
@@ -387,7 +472,12 @@ export function ApplicationForm() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate onKeyDown={(e) => {
+          if (e.key === 'Enter' && currentTab !== 'additional') {
+            e.preventDefault()
+            return false
+          }
+        }}>
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="personal">Personal</TabsTrigger>
@@ -905,7 +995,14 @@ export function ApplicationForm() {
             </Button>
 
             {currentTab === "additional" ? (
-              <Button type="submit" disabled={loading}>
+              <Button 
+                type="button" 
+                disabled={loading}
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleSubmit(e as any)
+                }}
+              >
                 {loading ? "Submitting..." : "Submit Application"}
               </Button>
             ) : (

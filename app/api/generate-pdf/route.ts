@@ -44,8 +44,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get uploaded documents for this application
-    const documents = await Document.find({ applicationId: application.applicationId })
+    // Get uploaded documents for this application - use exact applicationId match only
+    const appId = application.applicationId
+    
+    console.log('Searching for documents with exact applicationId:', appId)
+    const documents = await Document.find({ applicationId: appId })
+    console.log('Found documents:', documents.length, documents.map(d => ({ id: d._id, appId: d.applicationId, type: d.type })))
+    
+    // Separate academic and other documents with proper limits
+    const academicDocs = documents.filter(doc => doc.type?.includes('Marksheet')).slice(0, 4)
+    const otherDocs = documents.filter(doc => !doc.type?.includes('Marksheet'))
+      .filter((doc, index, self) => index === self.findIndex(d => d.type === doc.type))
+      .slice(0, 7)
+    const filteredDocuments = [...academicDocs, ...otherDocs]
 
     // Prepare PDF data with documents and academic records
     const studentDetails = application.studentDetails || {};
@@ -53,8 +64,8 @@ export async function POST(request: NextRequest) {
       application: {
         ...application.toObject(),
         id: application._id.toString(),
-        documents: documents.map(doc => `${doc.name} (${doc.type})`),
-        uploadedDocuments: documents
+        documents: filteredDocuments.map(doc => `${doc.name} (${doc.type})`),
+        uploadedDocuments: filteredDocuments
       },
       studentDetails: {
         studentName: application.studentName,
@@ -148,8 +159,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get uploaded documents for this application
-    const documents = await Document.find({ applicationId: application.applicationId })
+    // Get uploaded documents for this application - use exact applicationId match only
+    const appId = application.applicationId
+    
+    console.log('Searching for documents with exact applicationId:', appId)
+    const documents = await Document.find({ applicationId: appId })
+    console.log('Found documents:', documents.length, documents.map(d => ({ id: d._id, appId: d.applicationId, type: d.type })))
+    
+    // Separate academic and other documents with proper limits
+    const academicDocs = documents.filter(doc => doc.type?.includes('Marksheet')).slice(0, 4)
+    const otherDocs = documents.filter(doc => !doc.type?.includes('Marksheet'))
+      .filter((doc, index, self) => index === self.findIndex(d => d.type === doc.type))
+      .slice(0, 7)
+    const filteredDocuments = [...academicDocs, ...otherDocs]
 
     // Prepare PDF data with documents and academic records
     const studentDetails = application.studentDetails || {};
@@ -157,8 +179,8 @@ export async function GET(request: NextRequest) {
       application: {
         ...application.toObject(),
         id: application._id.toString(),
-        documents: documents.map(doc => `${doc.name} (${doc.type})`),
-        uploadedDocuments: documents
+        documents: filteredDocuments.map(doc => `${doc.name} (${doc.type})`),
+        uploadedDocuments: filteredDocuments
       },
       studentDetails: {
         studentName: application.studentName,

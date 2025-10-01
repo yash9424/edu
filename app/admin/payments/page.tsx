@@ -10,6 +10,7 @@ import { PaymentStats } from "@/components/admin/payment-stats"
 import { PaymentTable } from "@/components/admin/payment-table"
 import { MigratePaymentsButton } from "@/components/admin/migrate-payments-button"
 import { SyncPaymentsButton } from "@/components/admin/sync-payments-button"
+import { ExportReportButton } from "@/components/admin/export-report-button"
 
 export default async function PaymentsPage() {
   const session = await getSession()
@@ -38,10 +39,7 @@ export default async function PaymentsPage() {
             <div className="flex items-center gap-3">
               <SyncPaymentsButton />
               <MigratePaymentsButton />
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
+              <ExportReportButton />
             </div>
           </div>
 

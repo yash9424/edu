@@ -5,7 +5,7 @@ import Document from "@/lib/models/Document"
 import Application from "@/lib/models/Application"
 import mongoose from "mongoose"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session || session.role !== "agency") {
@@ -17,8 +17,20 @@ export async function GET() {
                          typeof session.id === 'string' ? session.id : 
                          JSON.stringify(session.agencyId || session.id)
     
-    const documents = await Document.find({ agencyId: agencyIdValue })
+    // Check if filtering by applicationId is requested
+    const { searchParams } = new URL(request.url)
+    const applicationId = searchParams.get('applicationId')
+    
+    let query: any = { agencyId: agencyIdValue }
+    if (applicationId) {
+      query.applicationId = applicationId
+      console.log('Filtering documents by applicationId:', applicationId)
+    }
+    
+    const documents = await Document.find(query)
       .sort({ createdAt: -1 })
+    
+    console.log('Found documents:', documents.length, 'for query:', query)
 
     return NextResponse.json(documents.map(doc => ({
       id: doc._id.toString(),
@@ -63,6 +75,14 @@ export async function POST(request: NextRequest) {
       fileData: fileData || '',
       status: 'pending'
     })
+    
+    // Remove uploaded document type from pending documents
+    const application = await Application.findOne({ applicationId: applicationId })
+    if (application && application.pendingDocuments) {
+      application.pendingDocuments = application.pendingDocuments.filter(doc => doc !== type)
+      await application.save()
+      console.log('Removed', type, 'from pending documents for application:', applicationId)
+    }
     
     // Also update Payment model documents field
     const Payment = (await import('@/lib/models/Payment')).default

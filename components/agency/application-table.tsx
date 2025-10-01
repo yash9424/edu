@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Eye, Edit, MoreHorizontal, Download, FileText, CreditCard } from "lucide-react"
+import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import PDFViewer, { PDFGenerateButton } from "@/components/pdf-viewer"
 import { Application } from "@/lib/data-store"
@@ -33,7 +34,20 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const generatePDF = (application: Application) => {
+const generatePDF = async (application: Application) => {
+  // Fetch documents for this application - use exact applicationId only
+  let documents: any[] = []
+  try {
+    const response = await fetch(`/api/agency/documents?applicationId=${application.applicationId}`, {
+      credentials: 'include'
+    })
+    if (response.ok) {
+      documents = await response.json()
+      console.log('Fetched documents for PDF:', documents.length, 'for applicationId:', application.applicationId)
+    }
+  } catch (error) {
+    console.error('Failed to fetch documents for PDF:', error)
+  }
   const pdfContent = `
 <!DOCTYPE html>
 <html>
@@ -117,9 +131,49 @@ const generatePDF = (application: Application) => {
   </div>
   
   <div class="section">
+    <h3>Uploaded Documents</h3>
+    ${documents.length > 0 ? documents.map(doc => `
+      <div style="margin-bottom: 30px; page-break-inside: avoid;">
+        <h4 style="background-color: #f8f9fa; padding: 10px; margin: 0 0 15px 0; border-left: 4px solid #007bff;">
+          ${doc.type || 'Document'} - ${doc.name || 'Unknown'}
+        </h4>
+        <div style="margin-bottom: 10px; font-size: 0.9em; color: #666;">
+          <strong>Upload Date:</strong> ${new Date(doc.uploadedAt).toLocaleDateString()} | 
+          <strong>Size:</strong> ${doc.size ? `${Math.round(doc.size / 1024)}KB` : 'Unknown'} | 
+          <strong>Status:</strong> <span style="color: ${doc.status === 'approved' ? '#28a745' : doc.status === 'rejected' ? '#dc3545' : '#ffc107'}">${doc.status || 'pending'}</span>
+        </div>
+        ${doc.fileData ? `
+          <div style="text-align: center; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;">
+            <img src="${doc.fileData}" style="max-width: 100%; max-height: 400px; border: 1px solid #ccc;" alt="${doc.name}" />
+          </div>
+        ` : '<p style="font-style: italic; color: #999; text-align: center; padding: 20px; border: 1px dashed #ccc;">Document content not available</p>'}
+      </div>
+    `).join('') : '<p style="font-style: italic; text-align: center; color: #666;">No documents uploaded yet</p>'}
+  </div>
+  
+  ${application.pendingDocuments && application.pendingDocuments.length > 0 ? `
+  <div class="section">
+    <h3>Pending Documents</h3>
+    <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px;">
+      <p style="margin: 0 0 10px 0; font-weight: bold; color: #856404;">The following documents are still required:</p>
+      <ul style="margin: 0; padding-left: 20px; color: #856404;">
+        ${application.pendingDocuments.map(doc => `<li>${doc}</li>`).join('')}
+      </ul>
+    </div>
+  </div>
+  ` : ''}
+  
+  <div class="section">
     <h3>Submission Details</h3>
     <div class="field"><span class="label">Submitted Date:</span><span class="value">${new Date(application.submittedAt).toLocaleDateString()}</span></div>
     <div class="field"><span class="label">Submitted Time:</span><span class="value">${new Date(application.submittedAt).toLocaleTimeString()}</span></div>
+    <div class="field"><span class="label">Total Documents:</span><span class="value">${documents.length}</span></div>
+    <div class="field"><span class="label">Application Status:</span><span class="value" style="color: ${application.status === 'approved' ? '#28a745' : application.status === 'rejected' ? '#dc3545' : '#ffc107'}; font-weight: bold;">${application.status.toUpperCase()}</span></div>
+  </div>
+  
+  <div class="section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+    <p style="text-align: center; color: #666; font-size: 0.9em;">This document was generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+    <p style="text-align: center; color: #666; font-size: 0.9em;">For any queries, please contact the admissions office.</p>
   </div>
 </body>
 </html>
@@ -259,6 +313,117 @@ const downloadDocuments = (application: Application) => {
 }
 
 
+
+function DocumentsDialog({ application, appDocs, onClose }: { application: Application, appDocs: any[], onClose: () => void }) {
+  const downloadDocument = async (doc: any) => {
+    try {
+      if (doc.fileData) {
+        let blob: Blob
+        if (doc.fileData.startsWith('data:')) {
+          const base64Data = doc.fileData.split(',')[1] || doc.fileData
+          const byteCharacters = atob(base64Data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          blob = new Blob([byteArray], { type: 'application/pdf' })
+        } else {
+          const base64Data = doc.fileData.split(',')[1] || doc.fileData
+          const byteCharacters = atob(base64Data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          blob = new Blob([byteArray], { type: 'application/pdf' })
+        }
+        
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = doc.name || `document_${doc.type}.pdf`
+        link.click()
+        URL.revokeObjectURL(url)
+        toast.success(`Downloaded ${doc.name}`)
+      } else {
+        const response = await fetch(`/api/agency/documents/${doc.id}`, {
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const docData = await response.json()
+          if (docData.fileData) {
+            const base64Data = docData.fileData.split(',')[1] || docData.fileData
+            const byteCharacters = atob(base64Data)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: 'application/pdf' })
+            
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = doc.name || `document_${doc.type}.pdf`
+            link.click()
+            URL.revokeObjectURL(url)
+            toast.success(`Downloaded ${doc.name}`)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error)
+      toast.error(`Failed to download ${doc.name}`)
+    }
+  }
+
+  return (
+    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Documents - {application.studentName}</DialogTitle>
+      </DialogHeader>
+      
+      <div className="py-4">
+        {appDocs.length > 0 ? (
+          <div className="space-y-3">
+            {appDocs.map((doc: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <div className="font-medium">{doc.name}</div>
+                    <div className="text-sm text-gray-500">
+                      Type: {doc.type} • Size: {doc.size ? `${Math.round(doc.size / 1024)}KB` : 'Unknown'}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadDocument(doc)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <p>No documents available for this application</p>
+          </div>
+        )}
+      </div>
+      
+      <DialogFooter>
+        <Button onClick={onClose}>Close</Button>
+      </DialogFooter>
+    </DialogContent>
+  )
+}
 
 function ViewApplicationDialog({ application, onClose }: { application: Application, onClose: () => void }) {
   return (
@@ -618,6 +783,8 @@ export default function ApplicationTable({ searchQuery = "", statusFilter = "all
   const [isClient, setIsClient] = useState(false)
   const [viewingApplication, setViewingApplication] = useState<Application | null>(null)
   const [editingApplication, setEditingApplication] = useState<Application | null>(null)
+  const [viewingDocuments, setViewingDocuments] = useState<Application | null>(null)
+  const [appDocuments, setAppDocuments] = useState<any[]>([])
 
   useEffect(() => {
     setIsClient(true)
@@ -687,6 +854,23 @@ export default function ApplicationTable({ searchQuery = "", statusFilter = "all
     if (paymentSettings?.universalPaymentLink && paymentSettings?.isActive) {
       const paymentUrl = `${paymentSettings.universalPaymentLink}?applicationId=${applicationId}`
       window.open(paymentUrl, '_blank')
+    }
+  }
+
+  const handleViewDocuments = async (application: Application) => {
+    try {
+      const response = await fetch(`/api/agency/documents?applicationId=${application.applicationId}`, {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const docs = await response.json()
+        console.log('Fetched documents for view:', docs.length, 'for applicationId:', application.applicationId)
+        setAppDocuments(docs)
+        setViewingDocuments(application)
+      }
+    } catch (error) {
+      console.error('Failed to fetch documents:', error)
+      toast.error('Failed to load documents')
     }
   }
 
@@ -761,6 +945,11 @@ export default function ApplicationTable({ searchQuery = "", statusFilter = "all
                         PDF
                       </Button>
                       
+                      <Button variant="outline" size="sm" onClick={() => handleViewDocuments(application)}>
+                        <Download className="h-4 w-4 mr-1" />
+                        Documents
+                      </Button>
+                      
 
                       
                       <DropdownMenu>
@@ -816,6 +1005,17 @@ export default function ApplicationTable({ searchQuery = "", statusFilter = "all
             setEditingApplication(null)
           }}
           onClose={() => setEditingApplication(null)}
+        />
+      </Dialog>
+    )}
+    
+    {/* View Documents Dialog */}
+    {viewingDocuments && (
+      <Dialog open={!!viewingDocuments} onOpenChange={() => setViewingDocuments(null)}>
+        <DocumentsDialog
+          application={viewingDocuments}
+          appDocs={appDocuments}
+          onClose={() => setViewingDocuments(null)}
         />
       </Dialog>
     )}
