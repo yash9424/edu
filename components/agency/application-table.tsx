@@ -191,126 +191,7 @@ const generatePDF = async (application: Application) => {
   }, 500)
 }
 
-const downloadDocuments = (application: Application) => {
-  const documentContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Documents List - ${application.studentName}</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-    .section { margin-bottom: 25px; }
-    .section h3 { background-color: #f5f5f5; padding: 10px; margin: 0 0 15px 0; }
-    .document-item { margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-    .document-name { font-weight: bold; color: #333; }
-    .document-status { color: #28a745; font-size: 0.9em; }
-    .required { color: #dc3545; }
-    .optional { color: #6c757d; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Document Checklist</h1>
-    <h2>${application.studentName}</h2>
-    <p>Application ID: ${application.applicationId || application._id || application.id}</p>
-    <p>College: ${application.collegeName}</p>
-    <p>Course: ${application.courseName}</p>
-  </div>
-  
-  <div class="section">
-    <h3>Required Documents</h3>
-    
-    <div class="document-item">
-      <div class="document-name">1. Aadhar Card / Passport Copy</div>
-      <div class="document-status required">Required - Identity Verification</div>
-      <p>Clear copy of government-issued identification document</p>
-    </div>
-    
-    <div class="document-item">
-      <div class="document-name">2. High School Marksheet</div>
-      <div class="document-status required">Required - Academic Record</div>
-      <p>Official transcript from high school/secondary education</p>
-    </div>
-    
-    <div class="document-item">
-      <div class="document-name">3. Intermediate/12th Grade Marksheet</div>
-      <div class="document-status required">Required - Academic Record</div>
-      <p>Official transcript from intermediate/higher secondary education</p>
-    </div>
-    
-    <div class="document-item">
-      <div class="document-name">4. Graduation Marksheet (if applicable)</div>
-      <div class="document-status optional">Optional - For postgraduate courses</div>
-      <p>Official transcript from undergraduate degree</p>
-    </div>
-  </div>
-  
-  <div class="section">
-    <h3>Additional Documents</h3>
-    
-    <div class="document-item">
-      <div class="document-name">5. Passport Size Photograph</div>
-      <div class="document-status required">Required - Recent photo</div>
-      <p>Recent passport-sized photograph (white background preferred)</p>
-    </div>
-    
-    <div class="document-item">
-      <div class="document-name">6. ABC ID Proof</div>
-      <div class="document-status optional">Optional - If available</div>
-      <p>Academic Bank of Credits identification document</p>
-    </div>
-    
-    <div class="document-item">
-      <div class="document-name">7. DEB ID Proof</div>
-      <div class="document-status optional">Optional - If available</div>
-      <p>Digital Education Board identification document</p>
-    </div>
-    
-    <div class="document-item">
-      <div class="document-name">8. Recommendation Letters</div>
-      <div class="document-status optional">Optional - Enhances application</div>
-      <p>Letters from teachers, employers, or academic references</p>
-    </div>
-  </div>
-  
-  <div class="section">
-    <h3>Application Summary</h3>
-    <table>
-      <tr><th>Field</th><th>Details</th></tr>
-      <tr><td>Student Name</td><td>${application.studentName}</td></tr>
-      <tr><td>Email</td><td>${application.email}</td></tr>
-      <tr><td>Phone</td><td>${application.phone}</td></tr>
-      <tr><td>College</td><td>${application.collegeName}</td></tr>
-      <tr><td>Course</td><td>${application.courseName}</td></tr>
-      <tr><td>Fees</td><td>$${application.fees?.toLocaleString() || '0'}</td></tr>
-      <tr><td>Status</td><td>${application.status.toUpperCase()}</td></tr>
-      <tr><td>Submitted Date</td><td>${new Date(application.submittedAt).toLocaleDateString()}</td></tr>
-    </table>
-  </div>
-  
-  <div class="section">
-    <p><strong>Note:</strong> Please ensure all required documents are submitted for successful processing of your application.</p>
-    <p><strong>Generated on:</strong> ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-  </div>
-</body>
-</html>
-  `
-  
-  // Open in new window for printing as PDF
-  const printWindow = window.open('', '_blank')
-  printWindow.document.write(documentContent)
-  printWindow.document.close()
-  printWindow.focus()
-  
-  // Auto print dialog
-  setTimeout(() => {
-    printWindow.print()
-  }, 500)
-}
+// Removed automatic download function - now using individual download dialog
 
 
 
@@ -963,9 +844,9 @@ export default function ApplicationTable({ searchQuery = "", statusFilter = "all
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Application
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => downloadDocuments(application)}>
+                          <DropdownMenuItem onClick={() => handleViewDocuments(application)}>
                             <Download className="h-4 w-4 mr-2" />
-                            Download Documents
+                            View Documents
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
