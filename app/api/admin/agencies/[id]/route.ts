@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
-import { db } from "@/lib/database"
+import connectDB from "@/lib/mongodb"
+import Agency from "@/lib/models/Agency"
+import User from "@/lib/models/User"
 import { broadcastEvent } from "@/app/api/events/route"
 
 interface RouteParams {
@@ -16,7 +18,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const agency = await db.getAgencyById(id)
+    await connectDB()
+    const agency = await Agency.findById(id)
     if (!agency) {
       return NextResponse.json({ error: "Agency not found" }, { status: 404 })
     }
@@ -37,8 +40,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    await connectDB()
     const data = await request.json()
-    const updatedAgency = await db.updateAgency(id, data)
+    const updatedAgency = await Agency.findByIdAndUpdate(id, data, { new: true })
 
     if (!updatedAgency) {
       return NextResponse.json({ error: "Agency not found" }, { status: 404 })
@@ -66,10 +70,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const deletedAgency = await db.deleteAgency(id)
-    if (!deletedAgency) {
+    await connectDB()
+    const agency = await Agency.findById(id)
+    if (!agency) {
       return NextResponse.json({ error: "Agency not found" }, { status: 404 })
     }
+
+    if (agency.userId) {
+      await User.findByIdAndDelete(agency.userId)
+    }
+    
+    const deletedAgency = await Agency.findByIdAndDelete(id)
 
     broadcastEvent({
       type: "agency",
