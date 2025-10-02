@@ -63,6 +63,7 @@
     "react-dom": "^18",
     "react-dropzone": "latest",
     "react-hook-form": "^7.60.0",
+    "react-is": "^19.2.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "latest",
     "sonner": "^1.7.4",

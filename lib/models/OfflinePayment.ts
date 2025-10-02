@@ -34,6 +34,9 @@ const offlinePaymentSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
+  },
+  receiptFile: {
+    type: String
   }
 }, {
   timestamps: true

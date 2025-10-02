@@ -61,14 +61,31 @@ export default function OfflinePaymentsPage() {
     setLoading(true)
     setMessage("")
 
+    // Validate required fields
+    if (!formData.beneficiary || !formData.paymentType || !formData.accountHolderName || 
+        !formData.transactionId || !formData.amount || !formData.txnDate || !formData.paySlipDocuments) {
+      setMessage("Please fill in all required fields")
+      setLoading(false)
+      return
+    }
+
     try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('beneficiary', formData.beneficiary)
+      formDataToSend.append('paymentType', formData.paymentType)
+      formDataToSend.append('accountHolderName', formData.accountHolderName)
+      formDataToSend.append('transactionId', formData.transactionId)
+      formDataToSend.append('amount', formData.amount)
+      formDataToSend.append('txnDate', formData.txnDate)
+      
+      if (formData.paySlipDocuments) {
+        formDataToSend.append('receiptFile', formData.paySlipDocuments)
+      }
+
       const response = await fetch("/api/agency/payments/offline", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         credentials: "include",
-        body: JSON.stringify(formData),
+        body: formDataToSend,
       })
 
       const result = await response.json()
@@ -84,6 +101,9 @@ export default function OfflinePaymentsPage() {
           txnDate: "",
           paySlipDocuments: null
         })
+        // Reset file input
+        const fileInput = document.getElementById('paySlipDocuments') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
         fetchPayments()
       } else {
         setMessage(result.error || "Failed to save payment record")
@@ -128,7 +148,7 @@ export default function OfflinePaymentsPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="paymentType">Type of Payment *</Label>
-                <Select value={formData.paymentType} onValueChange={(value) => handleChange("paymentType", value)}>
+                <Select value={formData.paymentType} onValueChange={(value) => handleChange("paymentType", value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select payment type" />
                   </SelectTrigger>
@@ -137,6 +157,7 @@ export default function OfflinePaymentsPage() {
                     <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="paymentType" value={formData.paymentType} required />
               </div>
               
               <div className="space-y-2">
@@ -194,6 +215,7 @@ export default function OfflinePaymentsPage() {
                   setFormData(prev => ({ ...prev, paySlipDocuments: file }))
                 }}
                 className="w-full text-sm"
+                title="Upload payment receipt document"
                 required
               />
               {formData.paySlipDocuments && (
@@ -231,6 +253,7 @@ export default function OfflinePaymentsPage() {
                     <th className="border border-gray-300 px-4 py-2 text-left">Amount</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Transaction ID</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Date</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Receipt</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
                   </tr>
                 </thead>
@@ -242,6 +265,21 @@ export default function OfflinePaymentsPage() {
                       <td className="border border-gray-300 px-4 py-2">₹{payment.amount}</td>
                       <td className="border border-gray-300 px-4 py-2">{payment.transactionId}</td>
                       <td className="border border-gray-300 px-4 py-2">{new Date(payment.txnDate).toLocaleDateString()}</td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        {payment.receiptFile ? (
+                          <a 
+                            href={payment.receiptFile} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm"
+                            title="View payment receipt document"
+                          >
+                            View Receipt
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No file</span>
+                        )}
+                      </td>
                       <td className="border border-gray-300 px-4 py-2">
                         <span className={`px-2 py-1 rounded text-xs ${
                           payment.status === 'approved' ? 'bg-green-100 text-green-700' :

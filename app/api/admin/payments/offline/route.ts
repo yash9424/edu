@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import connectDB from "@/lib/mongodb"
 import { OfflinePayment } from "@/lib/models/OfflinePayment"
+import Agency from "@/lib/models/Agency"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +14,19 @@ export async function GET(request: NextRequest) {
     await connectDB()
     
     const payments = await OfflinePayment.find({}).sort({ createdAt: -1 })
+    
+    // Get agency details for each payment
+    const paymentsWithAgency = await Promise.all(
+      payments.map(async (payment) => {
+        const agency = await Agency.findById(payment.agencyId)
+        return {
+          ...payment.toObject(),
+          agencyEmail: agency?.email || 'Unknown Agency'
+        }
+      })
+    )
 
-    return NextResponse.json(payments)
+    return NextResponse.json(paymentsWithAgency)
   } catch (error: any) {
     console.error("Error fetching offline payments:", error)
     return NextResponse.json({ error: "Failed to fetch payments" }, { status: 500 })
