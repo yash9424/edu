@@ -21,6 +21,51 @@ export async function GET(
       return NextResponse.json({ error: "Payment not found" }, { status: 404 })
     }
 
+    const getFileExtension = (mimeType: string) => {
+      const extensions: { [key: string]: string } = {
+        'image/jpeg': '.jpg',
+        'image/jpg': '.jpg', 
+        'image/png': '.png',
+        'application/pdf': '.pdf',
+        'image/gif': '.gif',
+        'image/bmp': '.bmp'
+      }
+      return extensions[mimeType] || ''
+    }
+
+    // Handle file download - check both new and old formats
+    if (payment.receiptFileData) {
+      const buffer = Buffer.from(payment.receiptFileData, 'base64')
+      const ext = getFileExtension(payment.receiptFileType || '')
+      const filename = payment.receiptFileName || `receipt-${payment._id}${ext}`
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': payment.receiptFileType || 'application/octet-stream',
+          'Content-Disposition': `inline; filename="${filename}"`
+        }
+      })
+    }
+    
+    if (payment.receiptFile) {
+      if (payment.receiptFile.startsWith('/uploads/')) {
+        return NextResponse.redirect(new URL(payment.receiptFile, request.url))
+      } else if (payment.receiptFile.startsWith('data:')) {
+        const [header, data] = payment.receiptFile.split(',')
+        const mimeMatch = header.match(/data:([^;]+)/)
+        const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+        const ext = getFileExtension(mimeType)
+        const buffer = Buffer.from(data, 'base64')
+        return new NextResponse(buffer, {
+          headers: {
+            'Content-Type': mimeType,
+            'Content-Disposition': `inline; filename="receipt-${payment._id}${ext}"`
+          }
+        })
+      }
+    }
+    
+    return NextResponse.json({ error: "Receipt file not available" }, { status: 404 })
+
     const agency = await Agency.findById(payment.agencyId)
     
     // Generate receipt HTML

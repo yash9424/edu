@@ -37,14 +37,28 @@ export async function PUT(request: NextRequest) {
     await connectDB()
     
     const body = await request.json()
+    console.log('Received banking details:', body)
     
     let settings = await Settings.findOne({})
     if (!settings) {
       settings = new Settings({ adminEmail: session.email || 'admin@education.com' })
     }
     
-    settings.bankingDetails = body
+    // Explicitly set banking details fields
+    settings.bankingDetails = {
+      bankName: body.bankName || '',
+      accountHolderName: body.accountHolderName || '',
+      accountNumber: body.accountNumber || '',
+      ifscCode: body.ifscCode || '',
+      branchName: body.branchName || '',
+      routingNumber: body.routingNumber || '',
+      swiftCode: body.swiftCode || '',
+      address: body.address || '',
+      instructions: body.instructions || ''
+    }
+    
     await settings.save()
+    console.log('Saved banking details:', settings.bankingDetails)
     
     return NextResponse.json({ 
       success: true,

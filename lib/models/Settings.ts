@@ -21,8 +21,10 @@ const SettingsSchema = new mongoose.Schema({
   // Banking Details
   bankingDetails: {
     bankName: { type: String },
-    accountName: { type: String },
+    accountHolderName: { type: String },
     accountNumber: { type: String },
+    ifscCode: { type: String },
+    branchName: { type: String },
     routingNumber: { type: String },
     swiftCode: { type: String },
     address: { type: String },

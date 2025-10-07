@@ -46,10 +46,10 @@ export default function AdminOfflinePaymentsPage() {
     }
   }
 
-  const downloadReceipt = (receiptFile: string, paymentId: string) => {
+  const downloadReceipt = (paymentId: string) => {
     const a = document.createElement('a')
-    a.href = receiptFile
-    a.download = `receipt-${paymentId}${receiptFile.substring(receiptFile.lastIndexOf('.'))}`
+    a.href = `/api/admin/payments/offline/receipt/${paymentId}`
+    a.download = `receipt-${paymentId}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -102,9 +102,9 @@ export default function AdminOfflinePaymentsPage() {
                       <td className="border border-gray-300 px-4 py-2">{payment.transactionId}</td>
                       <td className="border border-gray-300 px-4 py-2">{new Date(payment.txnDate).toLocaleDateString()}</td>
                       <td className="border border-gray-300 px-4 py-2">
-                        {payment.receiptFile ? (
+                        {(payment.receiptFileName || payment.receiptFile) ? (
                           <a 
-                            href={payment.receiptFile} 
+                            href={`/api/admin/payments/offline/receipt/${payment._id}`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-sm"
@@ -174,11 +174,11 @@ export default function AdminOfflinePaymentsPage() {
                               </AlertDialog>
                             </>
                           )}
-                          {payment.receiptFile && (
+                          {(payment.receiptFileName || payment.receiptFile) && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadReceipt(payment.receiptFile, payment._id)}
+                              onClick={() => downloadReceipt(payment._id)}
                             >
                               <Download className="h-4 w-4 mr-1" />
                               Download

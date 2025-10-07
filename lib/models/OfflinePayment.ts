@@ -37,6 +37,15 @@ const offlinePaymentSchema = new mongoose.Schema({
   },
   receiptFile: {
     type: String
+  },
+  receiptFileData: {
+    type: String
+  },
+  receiptFileName: {
+    type: String
+  },
+  receiptFileType: {
+    type: String
   }
 }, {
   timestamps: true
