@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     await connectDB()
     
     // Get payments and applications for current agency
-    const payments = await Payment.find({})
-    const applications = await Application.find({})
+    const payments = await Payment.find({ agencyId: session.userId })
+    const applications = await Application.find({ agencyId: session.userId })
     
     console.log('Agency stats - Total payments found:', payments.length)
     console.log('Agency stats - Total applications found:', applications.length)

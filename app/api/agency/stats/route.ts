@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
     
     await connectDB()
     
-    // Show all applications for now to debug
-    const applications = await Application.find({})
+    // Only show applications for current agency
+    const applications = await Application.find({ agencyId: session.userId })
     
     const totalApplications = applications.length
     const successfulApplications = applications.filter(app => app.status === 'approved').length

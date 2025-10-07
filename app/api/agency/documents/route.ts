@@ -13,9 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB()
-    const agencyIdValue = typeof session.agencyId === 'string' ? session.agencyId : 
-                         typeof session.id === 'string' ? session.id : 
-                         JSON.stringify(session.agencyId || session.id)
+    const agencyIdValue = session.id
     
     // Check if filtering by applicationId is requested
     const { searchParams } = new URL(request.url)
@@ -57,9 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { name, type, size, applicationId, fileData } = await request.json()
     
-    const agencyIdValue = typeof session.agencyId === 'string' ? session.agencyId : 
-                         typeof session.id === 'string' ? session.id : 
-                         JSON.stringify(session.agencyId || session.id)
+    const agencyIdValue = session.id
     
     console.log('Upload data:', { name, type, size, applicationId, agencyId: agencyIdValue })
 
