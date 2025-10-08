@@ -166,6 +166,14 @@ export class PDFGenerator {
       'Phone Number', data.application.phone
     )
     
+    // Add parent information
+    if (data.application.studentDetails?.fatherName || data.application.studentDetails?.motherName) {
+      this.addTwoColumnFields(
+        'Father Name', data.application.studentDetails?.fatherName || 'N/A',
+        'Mother Name', data.application.studentDetails?.motherName || 'N/A'
+      )
+    }
+    
     if (data.studentDetails) {
       this.addTwoColumnFields(
         'Date of Birth', data.studentDetails.dateOfBirth || 'N/A',
