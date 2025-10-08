@@ -81,6 +81,8 @@ const generatePDF = async (application: Application) => {
     <div class="field"><span class="label">Date of Birth:</span><span class="value">${application.studentDetails?.dateOfBirth || 'Not provided'}</span></div>
     <div class="field"><span class="label">Nationality:</span><span class="value">${application.studentDetails?.nationality || 'Not provided'}</span></div>
     <div class="field"><span class="label">Address:</span><span class="value">${application.studentDetails?.address || 'Not provided'}</span></div>
+    <div class="field"><span class="label">Father's Name:</span><span class="value">${application.studentDetails?.fatherName || 'Not provided'}</span></div>
+    <div class="field"><span class="label">Mother's Name:</span><span class="value">${application.studentDetails?.motherName || 'Not provided'}</span></div>
     <div class="field"><span class="label">ABC ID:</span><span class="value">${application.abcId || 'Not provided'}</span></div>
     <div class="field"><span class="label">DEB ID:</span><span class="value">${application.debId || 'Not provided'}</span></div>
   </div>
