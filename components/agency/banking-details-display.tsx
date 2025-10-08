@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy, Building, CreditCard, Hash, User, MapPin, CheckCircle } from "lucide-react"
+import { Copy, Building, CreditCard, Hash, User, MapPin, CheckCircle, ExternalLink, Link } from "lucide-react"
 import { BankingDetails } from "@/lib/data-store"
 import { toast } from "sonner"
 
 export function BankingDetailsDisplay() {
   const [bankingDetails, setBankingDetails] = useState<BankingDetails | null>(null)
+  const [paymentSettings, setPaymentSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
@@ -19,6 +20,7 @@ export function BankingDetailsDisplay() {
 
   useEffect(() => {
     fetchBankingDetails()
+    fetchPaymentSettings()
   }, [])
 
   const fetchBankingDetails = async () => {
@@ -32,6 +34,21 @@ export function BankingDetailsDisplay() {
       console.error('Failed to fetch banking details:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPaymentSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/payment-settings')
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Payment settings fetched:', data.paymentSettings)
+        setPaymentSettings(data.paymentSettings)
+      } else {
+        console.error('Failed to fetch payment settings:', response.status)
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment settings:', error)
     }
   }
 
@@ -105,6 +122,48 @@ export function BankingDetailsDisplay() {
         Use these details for payments and transactions
       </p>
       
+      {/* Universal Payment Link */}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <Link className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-xs text-muted-foreground">Universal Payment Link</div>
+                <div className="font-medium text-sm text-blue-600 truncate">
+                  {paymentSettings?.universalPaymentLink || 'Not configured by admin'}
+                </div>
+              </div>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = paymentSettings?.universalPaymentLink
+                if (url && url !== 'https://payments.example.com/pay') {
+                  window.open(url, '_blank')
+                } else {
+                  toast.error('Payment link not configured by admin')
+                }
+              }}
+              disabled={!paymentSettings?.universalPaymentLink || paymentSettings?.universalPaymentLink === 'https://payments.example.com/pay'}
+              className="h-8 px-3"
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Pay Now
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            Status: {paymentSettings?.isActive ? (
+              <span className="text-green-600 font-medium">Active</span>
+            ) : (
+              <span className="text-orange-600 font-medium">Not Configured</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
       {bankingFields.map((field) => {
         const Icon = field.icon
         const isCopied = copiedField === field.copyKey
@@ -140,7 +199,7 @@ export function BankingDetailsDisplay() {
       })}
       
       <div className="text-xs text-muted-foreground mt-4">
-        Last updated: {isClient ? new Date(bankingDetails.updatedAt).toLocaleDateString() : bankingDetails.updatedAt}
+        Last updated: {isClient && bankingDetails.updatedAt ? new Date(bankingDetails.updatedAt).toLocaleDateString() : 'Not available'}
       </div>
     </div>
   )

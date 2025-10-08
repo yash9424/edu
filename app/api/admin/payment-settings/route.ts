@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const session = await getSession()
     
-    if (!session || session.role !== "admin") {
+    if (!session || (session.role !== "admin" && session.role !== "agency")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -19,12 +19,15 @@ export async function GET() {
       await settings.save()
     }
     
+    const paymentSettings = settings.paymentSettings || {
+      universalPaymentLink: 'https://payments.example.com/pay',
+      enabled: true
+    }
+    
     return NextResponse.json({ 
-      paymentSettings: settings.paymentSettings || {
-        universalPaymentLink: 'https://payments.example.com/pay',
-        enabled: true,
-        paymentGateway: 'stripe',
-        currency: 'USD'
+      paymentSettings: {
+        ...paymentSettings,
+        isActive: paymentSettings.enabled
       }
     })
   } catch (error) {
@@ -32,9 +35,7 @@ export async function GET() {
     return NextResponse.json({ 
       paymentSettings: {
         universalPaymentLink: 'https://payments.example.com/pay',
-        enabled: true,
-        paymentGateway: 'stripe',
-        currency: 'USD'
+        isActive: true
       }
     })
   }

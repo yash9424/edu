@@ -266,9 +266,9 @@ export default function OfflinePaymentsPage() {
                       <td className="border border-gray-300 px-4 py-2">{payment.transactionId}</td>
                       <td className="border border-gray-300 px-4 py-2">{new Date(payment.txnDate).toLocaleDateString()}</td>
                       <td className="border border-gray-300 px-4 py-2">
-                        {payment.receiptFile ? (
+                        {(payment.receiptFileName || payment.receiptFile) ? (
                           <a 
-                            href={payment.receiptFile} 
+                            href={`/api/agency/payments/offline/receipt/${payment._id}`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-sm"

@@ -9,12 +9,14 @@ import mongoose from "mongoose"
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
+    console.log('POST Applications - Session:', session)
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await connectDB()
     const data = await request.json()
+    console.log('POST Applications - Data received:', data)
     
     const applicationId = data.applicationId || `APP-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
     
@@ -50,7 +52,9 @@ export async function POST(request: NextRequest) {
       academicRecords: data.academicRecords || []
     }
     
+    console.log('POST Applications - Creating application with data:', applicationData)
     const newApplication = await Application.create(applicationData)
+    console.log('POST Applications - Application created:', newApplication._id)
 
     // Create payment record
     const paymentData = {
@@ -140,8 +144,8 @@ export async function GET(request: NextRequest) {
     
     await connectDB()
     
-    // Show all applications for now to ensure they appear
-    let query = {}
+    // Only show applications for the current agency
+    let query = { agencyId: session.id }
     
     console.log('Query:', query)
     

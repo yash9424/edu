@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CreditCard, Download } from "lucide-react"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { CreditCard, Download, Check, X } from "lucide-react"
 
 export default function AdminOfflinePaymentsPage() {
   const [payments, setPayments] = useState<any[]>([])
@@ -45,10 +46,10 @@ export default function AdminOfflinePaymentsPage() {
     }
   }
 
-  const downloadReceipt = (receiptFile: string, paymentId: string) => {
+  const downloadReceipt = (paymentId: string) => {
     const a = document.createElement('a')
-    a.href = receiptFile
-    a.download = `receipt-${paymentId}${receiptFile.substring(receiptFile.lastIndexOf('.'))}`
+    a.href = `/api/admin/payments/offline/receipt/${paymentId}`
+    a.download = `receipt-${paymentId}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -101,9 +102,9 @@ export default function AdminOfflinePaymentsPage() {
                       <td className="border border-gray-300 px-4 py-2">{payment.transactionId}</td>
                       <td className="border border-gray-300 px-4 py-2">{new Date(payment.txnDate).toLocaleDateString()}</td>
                       <td className="border border-gray-300 px-4 py-2">
-                        {payment.receiptFile ? (
+                        {(payment.receiptFileName || payment.receiptFile) ? (
                           <a 
-                            href={payment.receiptFile} 
+                            href={`/api/admin/payments/offline/receipt/${payment._id}`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-sm"
@@ -131,25 +132,53 @@ export default function AdminOfflinePaymentsPage() {
                                 size="sm"
                                 onClick={() => updatePaymentStatus(payment._id, 'approved')}
                                 disabled={loading}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 text-white"
                               >
+                                <Check className="h-4 w-4 mr-1" />
                                 Approve
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => updatePaymentStatus(payment._id, 'rejected')}
-                                disabled={loading}
-                              >
-                                Reject
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    disabled={loading}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                  >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Reject Payment</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to reject this payment? This action cannot be undone.
+                                      <br /><br />
+                                      <strong>Payment Details:</strong><br />
+                                      Agency: {payment.agencyEmail}<br />
+                                      Amount: ₹{payment.amount}<br />
+                                      Transaction ID: {payment.transactionId}
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => updatePaymentStatus(payment._id, 'rejected')}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Reject Payment
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </>
                           )}
-                          {payment.receiptFile && (
+                          {(payment.receiptFileName || payment.receiptFile) && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadReceipt(payment.receiptFile, payment._id)}
+                              onClick={() => downloadReceipt(payment._id)}
                             >
                               <Download className="h-4 w-4 mr-1" />
                               Download

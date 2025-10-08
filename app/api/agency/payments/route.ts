@@ -13,14 +13,14 @@ export async function GET() {
 
     await connectDB()
     
-    // Get all payments for debugging
-    let payments = await Payment.find({})
+    // Get payments only for current agency
+    let payments = await Payment.find({ agencyId: session.userId })
       .populate('applicationId', 'applicationId')
       .sort({ createdAt: -1 })
 
     // If no payments found, create them from applications
     if (payments.length === 0) {
-      const applications = await Application.find({})
+      const applications = await Application.find({ agencyId: session.userId })
       
       for (const app of applications) {
         const existingPayment = await Payment.findOne({ applicationId: app._id })
@@ -48,7 +48,7 @@ export async function GET() {
       }
       
       // Fetch payments again after creation
-      payments = await Payment.find({})
+      payments = await Payment.find({ agencyId: session.userId })
         .populate('applicationId', 'applicationId')
         .sort({ createdAt: -1 })
     }

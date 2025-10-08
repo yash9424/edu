@@ -3,8 +3,7 @@ import { getSession } from "@/lib/auth"
 import connectDB from "@/lib/mongodb"
 import { OfflinePayment } from "@/lib/models/OfflinePayment"
 import Agency from "@/lib/models/Agency"
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,23 +53,16 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('receiptFile') as File
     
-    let receiptFilePath = ''
+    let receiptFileData = ''
+    let receiptFileName = ''
+    let receiptFileType = ''
     
     if (file) {
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = join(process.cwd(), 'public', 'uploads', 'receipts')
-      await mkdir(uploadsDir, { recursive: true })
-      
-      // Generate unique filename
-      const timestamp = Date.now()
-      const filename = `${timestamp}-${file.name}`
-      const filepath = join(uploadsDir, filename)
-      
-      await writeFile(filepath, buffer)
-      receiptFilePath = `/uploads/receipts/${filename}`
+      receiptFileData = buffer.toString('base64')
+      receiptFileName = file.name
+      receiptFileType = file.type
     }
     
     const paymentData = {
@@ -81,7 +73,10 @@ export async function POST(request: NextRequest) {
       transactionId: formData.get('transactionId') as string,
       amount: parseFloat(formData.get('amount') as string),
       txnDate: new Date(formData.get('txnDate') as string),
-      receiptFile: receiptFilePath,
+      receiptFile: receiptFileName ? `data:${receiptFileType};base64,${receiptFileData}` : '',
+      receiptFileData,
+      receiptFileName,
+      receiptFileType,
       status: "pending"
     }
 
